@@ -16,7 +16,7 @@ services:
       # ↓ CAMBIA ESTAS VARIABLES ↓
       - JWT_SECRET=CAMBIA_ESTO_POR_UNA_CLAVE_LARGA_Y_ALEATORIA_12345
       - JWT_EXPIRES_IN=7d
-      - APP_URL=https://tudominio.com
+      - APP_URL=https://ppjm.mplasesores.com
       # Configuración SMTP (correo para invitaciones)
       - SMTP_HOST=smtp.gmail.com
       - SMTP_PORT=587
