@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "description": "Sistema de gestión de proyectos para soporte técnico",
   "main": "server.js",
+  "bin": {
+    "proyecto-cms-setup": "./bin/setup.js"
+  },
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "setup": "node bin/setup.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
