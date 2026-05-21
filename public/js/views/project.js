@@ -244,6 +244,8 @@ function renderProjectContent(project, tasks) {
   window._allTasks = tasks;
   window._canEdit = canEdit;
   _tasksPage = 1;
+  window._calYear = undefined;   // Resetear estado del calendario
+  window._calMonth = undefined;  // Resetear estado del calendario
   renderTaskPage(tasks);
 
   function applyTaskFilters() {
@@ -510,7 +512,7 @@ function renderCalendar() {
       ${valid ? `<div class="cal-day-num${isToday ? ' today' : ''}">${day}</div>` : ''}
       ${dayTasks.slice(0, 3).map(t => `
         <div class="cal-task priority-${t.priority}" onclick="event.stopPropagation();App.navigate('tarea/${t.id}')"
-          title="${escHtml(t.title)} — ${statusLabel(t.status)}">
+          title="${escHtml(t.title)} — ${escHtml(statusLabel(t.status))}">
           ${priorityIcon(t.priority)} ${escHtml(t.title.length > 14 ? t.title.slice(0,14)+'…' : t.title)}
         </div>
       `).join('')}
