@@ -478,11 +478,28 @@ window.quickComplete = async function(taskId, currentStatus) {
   const newStatus = currentStatus === 'completada' ? 'pendiente' : 'completada';
   try {
     await api.updateTask(taskId, { status: newStatus });
-    const tasks = await api.getTasks(_projectData.id);
+    const [tasks, project] = await Promise.all([
+      api.getTasks(_projectData.id),
+      api.getProject(_projectData.id)
+    ]);
     window._allTasks = tasks;
-    document.getElementById('tasksList').innerHTML = renderTaskList(tasks);
-    const project = await api.getProject(_projectData.id);
     _projectData = project;
+    document.getElementById('tasksList').innerHTML = renderTaskList(tasks);
+
+    // Actualizar stats en tiempo real
+    const completedTasks = tasks.filter(t => t.status === 'completada').length;
+    const totalTasks = tasks.length;
+    const pct = project.progress || 0;
+    document.querySelectorAll('.stat-card')[1]?.querySelector('.value')
+      && (document.querySelectorAll('.stat-card')[1].querySelector('.value').textContent = completedTasks);
+    document.querySelectorAll('.stat-card')[3]?.querySelector('.value')
+      && (document.querySelectorAll('.stat-card')[3].querySelector('.value').textContent = pct + '%');
+    const fill = document.querySelector('.progress-fill');
+    if (fill) fill.style.width = pct + '%';
+    document.querySelectorAll('.progress-bar + div span')[0]
+      && (document.querySelectorAll('.progress-bar + div span')[0].textContent = `${completedTasks} de ${totalTasks} tareas completadas`);
+    document.querySelectorAll('.progress-bar + div span')[1]
+      && (document.querySelectorAll('.progress-bar + div span')[1].textContent = pct + '%');
   } catch (err) { toast(err.message, 'error'); }
 };
 
