@@ -1361,3 +1361,29 @@ select.form-control { cursor: pointer; }
 .mention-option { padding:8px 12px; cursor:pointer; font-size:13px; display:flex; align-items:center; gap:8px; }
 .mention-option:hover { background:var(--gray-50); }
 .mention-avatar-sm { width:24px; height:24px; border-radius:50%; background:var(--primary); color:white; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+/* ── Facturación ─────────────────────────────────────────────── */
+.invoice-sar { border:2px solid var(--gray-200); border-radius:8px; padding:24px; background:white; }
+.invoice-sar-header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid var(--gray-900); padding-bottom:12px; margin-bottom:16px; }
+.invoice-sar-emisor { font-size:12px; line-height:1.6; }
+.invoice-sar-title { text-align:right; }
+.invoice-sar-title h2 { font-size:18px; font-weight:700; text-transform:uppercase; }
+.invoice-sar-title .num { font-size:22px; font-weight:800; color:var(--primary); }
+.invoice-sar-cai { background:var(--gray-50); border:1px solid var(--gray-200); border-radius:6px; padding:8px 12px; font-size:11px; font-family:monospace; margin-bottom:16px; }
+.invoice-sar-parties { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+.invoice-sar-party { font-size:12px; line-height:1.7; }
+.invoice-sar-party strong { display:block; font-size:11px; text-transform:uppercase; color:var(--gray-500); margin-bottom:2px; }
+.invoice-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:13px; }
+.invoice-table th { background:var(--gray-900); color:white; padding:8px 12px; text-align:left; font-size:11px; text-transform:uppercase; }
+.invoice-table td { padding:8px 12px; border-bottom:1px solid var(--gray-100); }
+.invoice-totals { display:flex; justify-content:flex-end; }
+.invoice-totals-grid { width:260px; font-size:13px; }
+.invoice-totals-row { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--gray-100); }
+.invoice-totals-row.total { font-size:16px; font-weight:700; border-top:2px solid var(--gray-900); border-bottom:none; padding-top:8px; }
+.estado-borrador { background:#f3f4f6; color:#374151; }
+.estado-enviada  { background:#dbeafe; color:#1d4ed8; }
+.estado-pagada   { background:#dcfce7; color:#15803d; }
+.estado-vencida  { background:#fee2e2; color:#b91c1c; }
+.estado-anulada  { background:#f3f4f6; color:#9ca3af; text-decoration:line-through; }
+.payment-item { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--gray-100); font-size:13px; }
+.payment-item:last-child { border-bottom:none; }
