@@ -87,6 +87,34 @@ const api = {
   updateAutomation: (id, data) => api.put(`/automations/${id}`, data),
   deleteAutomation: (id) => api.delete(`/automations/${id}`),
   runAutomation: (id) => api.post(`/automations/${id}/run`, {}),
+
+  // Tags
+  getTagsByCompany: (companyId) => api.get(`/tags/company/${companyId}`),
+  createTag: (data) => api.post('/tags', data),
+  deleteTag: (id) => api.delete(`/tags/${id}`),
+  assignTag: (taskId, tagId) => api.post(`/tags/task/${taskId}`, { tag_id: tagId }),
+  removeTag: (taskId, tagId) => api.delete(`/tags/task/${taskId}/${tagId}`),
+
+  // Attachments
+  getAttachments: (taskId) => api.get(`/attachments/task/${taskId}`),
+  deleteAttachment: (id) => api.delete(`/attachments/${id}`),
+  uploadAttachment: (taskId, file) => {
+    const form = new FormData();
+    form.append('file', file);
+    const headers = {};
+    if (api._token) headers['Authorization'] = `Bearer ${api._token}`;
+    return fetch(`/api/attachments/task/${taskId}`, { method: 'POST', headers, body: form })
+      .then(async r => {
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
+        return d;
+      });
+  },
+
+  // Task dependencies
+  getTaskDependencies: (taskId) => api.get(`/tasks/${taskId}/dependencies`),
+  addDependency: (taskId, dependsOnId) => api.post(`/tasks/${taskId}/dependencies`, { depends_on_id: dependsOnId }),
+  removeDependency: (taskId, depId) => api.delete(`/tasks/${taskId}/dependencies/${depId}`),
 };
 
 // Shared HTML escaping — defined once here, available globally
