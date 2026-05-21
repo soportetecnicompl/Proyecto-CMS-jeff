@@ -10,16 +10,18 @@ router.get('/company/:companyId', (req, res) => {
   res.json(tags);
 });
 
-router.post('/', (req, res) => {
+router.post('/', (req, res, next) => {
   const { company_id, name, color } = req.body;
   if (!company_id || !name) return res.status(400).json({ error: 'company_id y name son requeridos' });
+  const company = db.prepare('SELECT id FROM companies WHERE id = ?').get(company_id);
+  if (!company) return res.status(400).json({ error: 'Empresa no encontrada' });
   try {
     const result = db.prepare('INSERT INTO tags (company_id, name, color, created_by) VALUES (?, ?, ?, ?)').run(company_id, name.trim(), color || '#6366f1', req.user.id);
     const tag = db.prepare('SELECT * FROM tags WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(tag);
   } catch (err) {
     if (err.message.includes('UNIQUE')) return res.status(400).json({ error: 'Ya existe una etiqueta con ese nombre' });
-    throw err;
+    next(err);
   }
 });
 
