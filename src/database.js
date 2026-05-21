@@ -222,6 +222,55 @@ function initDatabase() {
     );
 
     CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, read_at);
+
+    CREATE TABLE IF NOT EXISTS fiscal_config (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      rtn_emisor TEXT,
+      nombre_emisor TEXT,
+      direccion_emisor TEXT,
+      telefono_emisor TEXT,
+      cai TEXT,
+      rango_inicio TEXT,
+      rango_fin TEXT,
+      fecha_limite_emision DATE,
+      tipo_documento TEXT DEFAULT 'factura_venta',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS invoices (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+      project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+      numero_factura TEXT NOT NULL,
+      fecha_emision DATE NOT NULL,
+      fecha_vencimiento DATE,
+      descripcion TEXT NOT NULL,
+      monto_gravado REAL DEFAULT 0,
+      monto_exento REAL DEFAULT 0,
+      monto_exonerado REAL DEFAULT 0,
+      isv_porcentaje REAL DEFAULT 15,
+      isv_monto REAL DEFAULT 0,
+      total REAL NOT NULL,
+      estado TEXT DEFAULT 'borrador',
+      pdf_filename TEXT,
+      notas TEXT,
+      created_by INTEGER REFERENCES users(id),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS invoice_payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      invoice_id INTEGER REFERENCES invoices(id) ON DELETE CASCADE,
+      monto REAL NOT NULL,
+      fecha_pago DATE NOT NULL,
+      metodo_pago TEXT,
+      notas TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_invoices_company ON invoices(company_id);
+    CREATE INDEX IF NOT EXISTS idx_invoices_estado ON invoices(estado);
+    CREATE INDEX IF NOT EXISTS idx_payments_invoice ON invoice_payments(invoice_id);
   `);
 
   // Create initial admin user if not exists
@@ -241,5 +290,16 @@ function initDatabase() {
 }
 
 initDatabase();
+
+function addColumnSafe(table, column, def) {
+  try { db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${def}`); } catch {}
+}
+
+addColumnSafe('projects', 'contract_value', 'REAL');
+addColumnSafe('projects', 'billing_frequency', "TEXT DEFAULT 'proyecto'");
+addColumnSafe('companies', 'rtn', 'TEXT');
+addColumnSafe('companies', 'fiscal_name', 'TEXT');
+addColumnSafe('companies', 'fiscal_address', 'TEXT');
+addColumnSafe('users', 'rtn', 'TEXT');
 
 module.exports = db;
