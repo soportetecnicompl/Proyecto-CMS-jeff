@@ -306,69 +306,101 @@ function renderKanban() {
 }
 
 function renderPlanning() {
-  const tasks = (window._allTasks || []).filter(t => t.due_date);
+  const allTasks = window._allTasks || [];
   const project = _projectData;
+
+  // Usar tareas con fecha de vencimiento. Si tiene fecha inicio del proyecto, usar como referencia
+  const tasks = allTasks.filter(t => t.due_date);
 
   if (!tasks.length) {
     document.getElementById('planningContent').innerHTML = `
-      <div class="empty-state"><div class="icon">📅</div><h3>Sin planificación</h3><p>Agrega fechas de vencimiento a las tareas para ver la planificación.</p></div>
-    `;
+      <div class="empty-state"><div class="icon">📅</div>
+        <h3>Sin planificación</h3>
+        <p>Agrega fechas de vencimiento a las tareas para ver la línea de tiempo.</p>
+      </div>`;
     return;
   }
 
-  const sorted = [...tasks].sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
-  const minDate = new Date(sorted[0].due_date);
-  const maxDate = new Date(sorted[sorted.length-1].due_date);
-  const totalDays = Math.max((maxDate - minDate) / 86400000 + 1, 7);
+  // Calcular rango total — desde la fecha más temprana hasta la más tardía
+  const allDates = tasks.map(t => new Date(t.due_date));
+  if (project.start_date) allDates.push(new Date(project.start_date));
+  const minDate = new Date(Math.min(...allDates));
+  const maxDate = new Date(Math.max(...allDates));
+  // Añadir padding de 1 día a cada lado
+  minDate.setDate(minDate.getDate() - 1);
+  maxDate.setDate(maxDate.getDate() + 1);
+  const totalMs = maxDate - minDate;
+  const totalDays = Math.max(totalMs / 86400000, 7);
 
-  const months = [];
+  // Generar cabecera de fechas (una por cada 7 días aprox.)
+  const headerDates = [];
+  const step = Math.max(1, Math.round(totalDays / 10));
   const cur = new Date(minDate);
   while (cur <= maxDate) {
-    const key = `${cur.getFullYear()}-${cur.getMonth()}`;
-    if (!months.includes(key)) months.push(key);
-    cur.setDate(cur.getDate() + 1);
+    headerDates.push(new Date(cur));
+    cur.setDate(cur.getDate() + step);
   }
+
+  const priorityColors = { critica:'#ef4444', alta:'#f97316', media:'#3b82f6', baja:'#10b981' };
+  const sorted = [...tasks].sort((a,b) => new Date(a.due_date) - new Date(b.due_date));
 
   document.getElementById('planningContent').innerHTML = `
     <div class="card">
       <div class="card-body">
-        <h3 class="card-title mb-4">📅 Línea de tiempo del proyecto</h3>
-        ${project.start_date && project.end_date ? `
-          <div class="flex gap-4 mb-4 text-sm text-gray">
-            <span>📅 Inicio: <strong>${formatDate(project.start_date)}</strong></span>
-            <span>🏁 Fin: <strong>${formatDate(project.end_date)}</strong></span>
-            <span>📊 Progreso: <strong>${project.progress || 0}%</strong></span>
-          </div>
-        ` : ''}
-        <div class="gantt-container">
-          <div style="min-width:600px">
-            <div class="gantt-row" style="border-bottom:2px solid var(--gray-200)">
-              <div class="gantt-task-name" style="font-weight:600;font-size:12px">Tarea</div>
-              <div style="flex:1;display:flex;font-size:11px;color:var(--gray-400)">
-                ${sorted.map(t => {
-                  const d = new Date(t.due_date);
-                  return `<div style="flex:1;text-align:center;border-right:1px solid var(--gray-100);padding:4px 0">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="card-title">📅 Línea de tiempo</h3>
+          ${project.start_date && project.end_date ? `
+            <div class="flex gap-4 text-sm text-gray">
+              <span>🚀 <strong>${formatDate(project.start_date)}</strong></span>
+              <span>🏁 <strong>${formatDate(project.end_date)}</strong></span>
+              <span>📊 <strong>${project.progress || 0}%</strong></span>
+            </div>` : ''}
+        </div>
+        <div class="gantt-container" style="overflow-x:auto">
+          <div style="min-width:560px">
+            <!-- Header -->
+            <div class="gantt-row" style="border-bottom:2px solid var(--gray-200);margin-bottom:4px">
+              <div class="gantt-task-name" style="font-weight:600;font-size:11px;color:var(--gray-500)">TAREA</div>
+              <div style="flex:1;position:relative;height:24px">
+                ${headerDates.map(d => {
+                  const pct = ((d - minDate) / totalMs) * 100;
+                  return `<div style="position:absolute;left:${pct}%;font-size:10px;color:var(--gray-400);transform:translateX(-50%);white-space:nowrap">
                     ${d.getDate()}/${d.getMonth()+1}
                   </div>`;
                 }).join('')}
               </div>
             </div>
-            ${sorted.map((task, i) => {
-              const startOffset = (new Date(task.due_date) - minDate) / 86400000;
-              const pct = (startOffset / totalDays) * 100;
-              const width = Math.max(3, 100 / totalDays);
+            <!-- Task rows -->
+            ${sorted.map(task => {
+              // Bar: starts at created_at (or project start), ends at due_date
+              const startRef = task.created_at ? new Date(task.created_at) : minDate;
+              const end = new Date(task.due_date);
+              const barStart = Math.max(0, ((startRef - minDate) / totalMs) * 100);
+              const barEnd = Math.min(100, ((end - minDate) / totalMs) * 100);
+              const barWidth = Math.max(1.5, barEnd - barStart);
+              const color = priorityColors[task.priority] || '#6366f1';
+              const isOverdue = end < new Date() && task.status !== 'completada';
               return `
-                <div class="gantt-row">
-                  <div class="gantt-task-name">${escHtml(task.title)}</div>
+                <div class="gantt-row" onclick="App.navigate('tarea/${task.id}')" style="cursor:pointer">
+                  <div class="gantt-task-name" title="${escHtml(task.title)}">
+                    <span class="status-badge status-${task.status}" style="font-size:10px;margin-right:4px">${statusLabel(task.status)}</span>
+                    ${escHtml(task.title)}
+                  </div>
                   <div class="gantt-bar-area">
-                    <div class="gantt-bar" style="left:${pct}%; width:${width}%">
-                      ${task.assigned_name ? escHtml(task.assigned_name.split(' ')[0]) : ''}
+                    <div class="gantt-bar" style="left:${barStart}%;width:${barWidth}%;background:${isOverdue ? '#ef4444' : color};opacity:${task.status==='completada'?.6:1}"
+                      title="${escHtml(task.title)} — Vence: ${formatDate(task.due_date)}${isOverdue?' ⚠️ VENCIDA':''}">
+                      ${task.assigned_name ? `<span style="font-size:10px;white-space:nowrap;overflow:hidden;max-width:100%;display:block">👤 ${escHtml(task.assigned_name.split(' ')[0])}</span>` : ''}
                     </div>
                   </div>
-                </div>
-              `;
+                </div>`;
             }).join('')}
           </div>
+        </div>
+        <div class="flex gap-4 mt-4 text-xs text-gray flex-wrap">
+          <span><span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:2px;margin-right:4px"></span>Crítica / Vencida</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#f97316;border-radius:2px;margin-right:4px"></span>Alta</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border-radius:2px;margin-right:4px"></span>Media</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#10b981;border-radius:2px;margin-right:4px"></span>Baja / Completada</span>
         </div>
       </div>
     </div>
