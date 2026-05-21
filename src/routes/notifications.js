@@ -19,7 +19,7 @@ function createNotification(userId, type, title, body, entityType, entityId) {
     VALUES (?, ?, ?, ?, ?, ?)
   `).run(userId, type, title, body || null, entityType || null, entityId || null);
   const notif = db.prepare('SELECT * FROM notifications WHERE id = ?').get(result.lastInsertRowid);
-  notifyUser(userId, { type: 'notification', notification: notif });
+  try { notifyUser(userId, { type: 'notification', notification: notif }); } catch {}
   return notif;
 }
 
