@@ -1206,7 +1206,7 @@ select.form-control { cursor: pointer; }
 .w-full { width: 100%; }
 
 /* ── Kanban drag & drop ──────────────────────────────────────── */
-.kanban-task[draggable] { cursor: grab; }
-.kanban-task[draggable]:active { cursor: grabbing; }
+.kanban-task[draggable="true"] { cursor: grab; }
+.kanban-task[draggable="true"]:active { cursor: grabbing; }
 .kanban-task.dragging { opacity: 0.4; transform: scale(0.97); }
 .kanban-column.drag-over { background: var(--primary-light, #eff6ff); border: 2px dashed var(--primary); border-radius: 8px; }

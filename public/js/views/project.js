@@ -306,8 +306,8 @@ function renderKanban() {
     const colTasks = tasks.filter(t => t.status === col.id);
     return `
       <div class="kanban-column" id="kcol-${col.id}"
-        ondragover="event.preventDefault(); document.getElementById('kcol-${col.id}').classList.add('drag-over')"
-        ondragleave="document.getElementById('kcol-${col.id}').classList.remove('drag-over')"
+        ondragover="event.preventDefault(); this.classList.add('drag-over')"
+        ondragleave="if (!this.contains(event.relatedTarget)) this.classList.remove('drag-over')"
         ondrop="onKanbanDrop(event, '${col.id}')">
         <div class="kanban-header" style="border-bottom-color:${col.color}">
           <span>${col.label}</span>
@@ -340,6 +340,7 @@ window.onKanbanDragStart = function(e, taskId) {
 };
 
 window.onKanbanDrop = async function(e, newStatus) {
+  if (!window._canEdit) return;
   e.preventDefault();
   document.querySelectorAll('.kanban-column').forEach(c => c.classList.remove('drag-over'));
   const taskId = parseInt(e.dataTransfer.getData('kanban_task_id'));
