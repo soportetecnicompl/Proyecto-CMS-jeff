@@ -686,6 +686,7 @@ async function loadProjectComments(projectId) {
   try {
     const comments = await api.getComments('project', projectId);
     renderComments(comments, 'projectComments', 'project', projectId);
+    initMentionTextarea('projectCommentInput', _projectData?.company_id);
   } catch (err) { toast(err.message, 'error'); }
 }
 
@@ -731,7 +732,7 @@ function renderComments(comments, containerId, type, entityId) {
               onclick="deleteCommentItem(${c.id}, '${containerId}', '${type}', ${entityId})">🗑️</button>
           ` : ''}
         </div>
-        <div class="comment-content">${escHtml(c.content)}</div>
+        <div class="comment-content">${renderCommentContent(c.content)}</div>
       </div>
     </div>
   `).join('') : `<p class="text-sm text-gray">Sin comentarios aún.</p>`;

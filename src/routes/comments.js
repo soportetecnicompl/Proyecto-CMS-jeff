@@ -62,6 +62,27 @@ router.post('/:type/:id', (req, res) => {
     }
   }
 
+  // Detectar @menciones y notificar a los usuarios mencionados
+  const mentionRegex = /@([\wÀ-ɏ]+(?:_[\wÀ-ɏ]+)*)/g;
+  const mentioned = new Set();
+  let m;
+  while ((m = mentionRegex.exec(content.trim())) !== null) {
+    const nameQuery = m[1].replace(/_/g, ' ').toLowerCase();
+    const user = db.prepare(`
+      SELECT id FROM users WHERE LOWER(name) = ? OR LOWER(REPLACE(name, ' ', '_')) = ?
+    `).get(nameQuery, m[1].toLowerCase());
+    if (user && user.id !== req.user.id && !mentioned.has(user.id)) {
+      mentioned.add(user.id);
+      createNotification(
+        user.id,
+        'mention',
+        'Te mencionaron en un comentario',
+        `${req.user.name} te mencionó`,
+        type, id
+      );
+    }
+  }
+
   res.status(201).json(comment);
 });
 

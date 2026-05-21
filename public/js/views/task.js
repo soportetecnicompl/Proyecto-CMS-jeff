@@ -280,10 +280,12 @@ async function loadTaskComments(taskId) {
                 onclick="deleteTaskComment(${c.id}, ${taskId})">🗑️</button>
             ` : ''}
           </div>
-          <div class="comment-content">${escHtml(c.content)}</div>
+          <div class="comment-content">${renderCommentContent(c.content)}</div>
         </div>
       </div>
     `).join('') : '<p class="text-sm text-gray">Sin comentarios aún. ¡Sé el primero en comentar!</p>';
+
+    initMentionTextarea('taskCommentInput', _taskData?.company_id);
   } catch (err) { toast(err.message, 'error'); }
 }
 

@@ -1354,3 +1354,10 @@ select.form-control { cursor: pointer; }
 .notif-item-time { font-size:11px; color:var(--gray-400); margin-top:2px; }
 .notif-empty { padding:24px; text-align:center; color:var(--gray-400); font-size:13px; }
 .activity-log-meta { font-size:11px; color:var(--gray-400); margin-top:2px; }
+
+/* ── @Menciones ──────────────────────────────────────────────── */
+.mention { background:var(--primary-light, #dbeafe); color:var(--primary-dark, #1d4ed8); border-radius:4px; padding:0 3px; font-weight:500; }
+.mention-dropdown { position:fixed; background:white; border:1px solid var(--gray-200); border-radius:8px; box-shadow:var(--shadow-md); z-index:300; max-height:180px; overflow-y:auto; min-width:180px; }
+.mention-option { padding:8px 12px; cursor:pointer; font-size:13px; display:flex; align-items:center; gap:8px; }
+.mention-option:hover { background:var(--gray-50); }
+.mention-avatar-sm { width:24px; height:24px; border-radius:50%; background:var(--primary); color:white; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }

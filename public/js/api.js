@@ -396,3 +396,77 @@ function paginate(items, page, perPage = 15) {
 function safeColor(c) {
   return /^#[0-9a-fA-F]{3,6}$/.test(c) ? c : '#6366f1';
 }
+
+function renderCommentContent(text) {
+  return escHtml(text).replace(/@([\wÀ-ɏ]+(?:_[\wÀ-ɏ]+)*)/g,
+    '<span class="mention">@$1</span>');
+}
+
+function initMentionTextarea(textareaId, companyId) {
+  const ta = document.getElementById(textareaId);
+  if (!ta || ta._mentionInited) return;
+  ta._mentionInited = true;
+
+  let _users = [];
+  let _mentionStart = -1;
+  let _dropdown = null;
+
+  function closeMentionDropdown() {
+    if (_dropdown) { _dropdown.remove(); _dropdown = null; }
+  }
+
+  ta.addEventListener('keydown', (e) => {
+    if (_dropdown) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); _dropdown.querySelector('.mention-option')?.focus(); }
+      if (e.key === 'Escape') closeMentionDropdown();
+    }
+  });
+
+  ta.addEventListener('input', async () => {
+    const val = ta.value;
+    const pos = ta.selectionStart;
+    const textBefore = val.slice(0, pos);
+    const atMatch = textBefore.match(/@([\wÀ-ɏ]*)$/);
+
+    if (!atMatch) { closeMentionDropdown(); _mentionStart = -1; return; }
+
+    const query = atMatch[1].toLowerCase();
+    _mentionStart = textBefore.lastIndexOf('@');
+
+    if (!_users.length && companyId) {
+      try { _users = await api.getCompanyUsers(companyId); } catch { _users = []; }
+    }
+
+    const matches = _users.filter(u => u.name.toLowerCase().includes(query)).slice(0, 6);
+    if (!matches.length) { closeMentionDropdown(); return; }
+
+    closeMentionDropdown();
+    _dropdown = document.createElement('div');
+    _dropdown.className = 'mention-dropdown';
+
+    matches.forEach(u => {
+      const opt = document.createElement('div');
+      opt.className = 'mention-option';
+      opt.tabIndex = 0;
+      opt.innerHTML = `<div class="mention-avatar-sm">${avatarInitials(u.name)}</div><span>${escHtml(u.name)}</span>`;
+      opt.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const before = ta.value.slice(0, _mentionStart);
+        const after = ta.value.slice(ta.selectionStart);
+        const mention = '@' + u.name.replace(/ /g, '_');
+        ta.value = before + mention + ' ' + after;
+        ta.selectionStart = ta.selectionEnd = before.length + mention.length + 1;
+        closeMentionDropdown();
+        ta.focus();
+      });
+      _dropdown.appendChild(opt);
+    });
+
+    const rect = ta.getBoundingClientRect();
+    _dropdown.style.left = rect.left + 'px';
+    _dropdown.style.top = (rect.bottom + window.scrollY) + 'px';
+    document.body.appendChild(_dropdown);
+  });
+
+  ta.addEventListener('blur', () => setTimeout(closeMentionDropdown, 200));
+}
