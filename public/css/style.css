@@ -1237,3 +1237,14 @@ select.form-control { cursor: pointer; }
 .subtask-add-row { display:flex; gap:8px; margin-top:8px; }
 .subtask-add-row input { flex:1; }
 .subtask-progress { font-size:11px; color:var(--gray-500); margin-left:8px; }
+
+/* ── Etiquetas (tags) ────────────────────────────────────────── */
+.tag-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:500; cursor:default; }
+.tag-chip .tag-remove { cursor:pointer; opacity:0.6; font-size:10px; padding:0 2px; }
+.tag-chip .tag-remove:hover { opacity:1; }
+.tags-wrap { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+.tag-selector { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.tag-option { padding:3px 10px; border-radius:999px; font-size:12px; cursor:pointer; border:2px solid transparent; transition:border-color .15s; }
+.tag-option:hover { border-color: rgba(0,0,0,.2); }
+.tag-option.selected { border-color: rgba(0,0,0,.4); }
+

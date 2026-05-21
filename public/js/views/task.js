@@ -152,9 +152,23 @@ function renderTaskContent(task) {
               <div class="text-xs text-gray mb-1">Creado por</div>
               <div class="text-sm">${escHtml(task.creator_name || '—')}</div>
             </div>
-            <div style="padding:12px 16px">
+            <div style="padding:12px 16px; border-bottom:1px solid var(--gray-100)">
               <div class="text-xs text-gray mb-1">Fecha de creación</div>
               <div class="text-sm">${formatDateTime(task.created_at)}</div>
+            </div>
+            <div style="padding:12px 16px">
+              <div class="text-xs text-gray mb-1">Etiquetas</div>
+              <div class="tags-wrap" id="taskTagsWrap">
+                ${(task.tags || []).map(tag => `
+                  <span class="tag-chip" style="background:${tag.color}22;color:${tag.color}">
+                    ${escHtml(tag.name)}
+                    <span class="tag-remove" onclick="removeTagFromTask(${task.id}, ${tag.id})">✕</span>
+                  </span>
+                `).join('') || '<span class="text-xs text-gray">Sin etiquetas</span>'}
+              </div>
+              <button class="btn btn-ghost btn-sm mt-2" onclick="openTagManager(${task.id}, ${task.company_id || 0})">
+                + Etiqueta
+              </button>
             </div>
           </div>
         </div>
@@ -480,6 +494,113 @@ window.submitSubtask = async function(parentTaskId) {
     if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Crear'; }
     toast('Error: ' + err.message, 'error');
   }
+};
+
+window.openTagManager = async function(taskId, companyId) {
+  const [allTags] = await Promise.all([
+    api.getTagsByCompany(companyId)
+  ]);
+  const taskTags = _taskData.tags || [];
+  const assignedIds = new Set(taskTags.map(t => t.id));
+
+  createModal({
+    id: 'modalTags',
+    title: 'Gestionar Etiquetas',
+    body: `
+      <div class="form-group">
+        <label class="form-label">Etiquetas disponibles</label>
+        <div class="tag-selector" id="tagSelectorList">
+          ${allTags.length ? allTags.map(tag => `
+            <span class="tag-option${assignedIds.has(tag.id) ? ' selected' : ''}"
+              style="background:${tag.color}22;color:${tag.color};border-color:${assignedIds.has(tag.id) ? tag.color : 'transparent'}"
+              onclick="toggleTaskTag(${taskId}, ${tag.id}, '${tag.color}', this)"
+              data-assigned="${assignedIds.has(tag.id) ? '1' : '0'}">
+              ${escHtml(tag.name)}
+            </span>
+          `).join('') : '<p class="text-sm text-gray">No hay etiquetas creadas aún.</p>'}
+        </div>
+      </div>
+      <hr style="margin:16px 0">
+      <div class="form-group">
+        <label class="form-label">Nueva etiqueta</label>
+        <div class="flex gap-2">
+          <input class="form-control" id="newTagName" placeholder="Nombre de la etiqueta" style="flex:1">
+          <input type="color" id="newTagColor" value="#6366f1" style="width:40px;height:38px;border:1px solid var(--gray-200);border-radius:6px;cursor:pointer;padding:2px">
+          <button class="btn btn-primary btn-sm" onclick="createTagAndAssign(${taskId}, ${companyId})">Crear</button>
+        </div>
+      </div>
+    `,
+    footer: `<button class="btn btn-secondary" onclick="hideModal('modalTags')">Cerrar</button>`
+  });
+  showModal('modalTags');
+};
+
+window.toggleTaskTag = async function(taskId, tagId, color, el) {
+  const isAssigned = el.dataset.assigned === '1';
+  try {
+    if (isAssigned) {
+      await api.removeTag(taskId, tagId);
+      el.dataset.assigned = '0';
+      el.style.borderColor = 'transparent';
+      el.classList.remove('selected');
+    } else {
+      await api.assignTag(taskId, tagId);
+      el.dataset.assigned = '1';
+      el.style.borderColor = color;
+      el.classList.add('selected');
+    }
+    const updated = await api.getTask(taskId);
+    _taskData = updated;
+    const wrap = document.getElementById('taskTagsWrap');
+    if (wrap) {
+      wrap.innerHTML = (updated.tags || []).map(tag => `
+        <span class="tag-chip" style="background:${tag.color}22;color:${tag.color}">
+          ${escHtml(tag.name)}
+          <span class="tag-remove" onclick="removeTagFromTask(${taskId}, ${tag.id})">✕</span>
+        </span>
+      `).join('') || '<span class="text-xs text-gray">Sin etiquetas</span>';
+    }
+  } catch (err) { toast(err.message, 'error'); }
+};
+
+window.removeTagFromTask = async function(taskId, tagId) {
+  try {
+    await api.removeTag(taskId, tagId);
+    const updated = await api.getTask(taskId);
+    _taskData = updated;
+    const wrap = document.getElementById('taskTagsWrap');
+    if (wrap) {
+      wrap.innerHTML = (updated.tags || []).map(tag => `
+        <span class="tag-chip" style="background:${tag.color}22;color:${tag.color}">
+          ${escHtml(tag.name)}
+          <span class="tag-remove" onclick="removeTagFromTask(${taskId}, ${tag.id})">✕</span>
+        </span>
+      `).join('') || '<span class="text-xs text-gray">Sin etiquetas</span>';
+    }
+  } catch (err) { toast(err.message, 'error'); }
+};
+
+window.createTagAndAssign = async function(taskId, companyId) {
+  const name = document.getElementById('newTagName')?.value.trim();
+  const color = document.getElementById('newTagColor')?.value || '#6366f1';
+  if (!name) return;
+  try {
+    const tag = await api.createTag({ company_id: companyId, name, color });
+    await api.assignTag(taskId, tag.id);
+    hideModal('modalTags');
+    const updated = await api.getTask(taskId);
+    _taskData = updated;
+    const wrap = document.getElementById('taskTagsWrap');
+    if (wrap) {
+      wrap.innerHTML = (updated.tags || []).map(t => `
+        <span class="tag-chip" style="background:${t.color}22;color:${t.color}">
+          ${escHtml(t.name)}
+          <span class="tag-remove" onclick="removeTagFromTask(${taskId}, ${t.id})">✕</span>
+        </span>
+      `).join('') || '<span class="text-xs text-gray">Sin etiquetas</span>';
+    }
+    toast('Etiqueta creada y asignada', 'success');
+  } catch (err) { toast(err.message, 'error'); }
 };
 
 window.openLogTime = openLogTime;
