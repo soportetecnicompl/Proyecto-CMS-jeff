@@ -160,7 +160,7 @@ function renderTaskContent(task) {
               <div class="text-xs text-gray mb-1">Etiquetas</div>
               <div class="tags-wrap" id="taskTagsWrap">
                 ${(task.tags || []).map(tag => `
-                  <span class="tag-chip" style="background:${tag.color}22;color:${tag.color}">
+                  <span class="tag-chip" style="background:${safeColor(tag.color)}22;color:${safeColor(tag.color)}">
                     ${escHtml(tag.name)}
                     <span class="tag-remove" onclick="removeTagFromTask(${task.id}, ${tag.id})">✕</span>
                   </span>
@@ -496,6 +496,10 @@ window.submitSubtask = async function(parentTaskId) {
   }
 };
 
+function safeColor(c) {
+  return /^#[0-9a-fA-F]{3,6}$/.test(c) ? c : '#6366f1';
+}
+
 window.openTagManager = async function(taskId, companyId) {
   const [allTags] = await Promise.all([
     api.getTagsByCompany(companyId)
@@ -512,8 +516,9 @@ window.openTagManager = async function(taskId, companyId) {
         <div class="tag-selector" id="tagSelectorList">
           ${allTags.length ? allTags.map(tag => `
             <span class="tag-option${assignedIds.has(tag.id) ? ' selected' : ''}"
-              style="background:${tag.color}22;color:${tag.color};border-color:${assignedIds.has(tag.id) ? tag.color : 'transparent'}"
-              onclick="toggleTaskTag(${taskId}, ${tag.id}, '${tag.color}', this)"
+              style="background:${safeColor(tag.color)}22;color:${safeColor(tag.color)};border-color:${assignedIds.has(tag.id) ? safeColor(tag.color) : 'transparent'}"
+              onclick="toggleTaskTag(${taskId}, ${tag.id}, this)"
+              data-color="${safeColor(tag.color)}"
               data-assigned="${assignedIds.has(tag.id) ? '1' : '0'}">
               ${escHtml(tag.name)}
             </span>
@@ -535,7 +540,9 @@ window.openTagManager = async function(taskId, companyId) {
   showModal('modalTags');
 };
 
-window.toggleTaskTag = async function(taskId, tagId, color, el) {
+window.toggleTaskTag = async function(taskId, tagId, el) {
+  const color = safeColor(el.dataset.color || '#6366f1');
+  el.style.pointerEvents = 'none';  // guard doble click
   const isAssigned = el.dataset.assigned === '1';
   try {
     if (isAssigned) {
@@ -554,13 +561,14 @@ window.toggleTaskTag = async function(taskId, tagId, color, el) {
     const wrap = document.getElementById('taskTagsWrap');
     if (wrap) {
       wrap.innerHTML = (updated.tags || []).map(tag => `
-        <span class="tag-chip" style="background:${tag.color}22;color:${tag.color}">
+        <span class="tag-chip" style="background:${safeColor(tag.color)}22;color:${safeColor(tag.color)}">
           ${escHtml(tag.name)}
           <span class="tag-remove" onclick="removeTagFromTask(${taskId}, ${tag.id})">✕</span>
         </span>
       `).join('') || '<span class="text-xs text-gray">Sin etiquetas</span>';
     }
   } catch (err) { toast(err.message, 'error'); }
+  finally { el.style.pointerEvents = ''; }
 };
 
 window.removeTagFromTask = async function(taskId, tagId) {
@@ -571,7 +579,7 @@ window.removeTagFromTask = async function(taskId, tagId) {
     const wrap = document.getElementById('taskTagsWrap');
     if (wrap) {
       wrap.innerHTML = (updated.tags || []).map(tag => `
-        <span class="tag-chip" style="background:${tag.color}22;color:${tag.color}">
+        <span class="tag-chip" style="background:${safeColor(tag.color)}22;color:${safeColor(tag.color)}">
           ${escHtml(tag.name)}
           <span class="tag-remove" onclick="removeTagFromTask(${taskId}, ${tag.id})">✕</span>
         </span>
@@ -593,7 +601,7 @@ window.createTagAndAssign = async function(taskId, companyId) {
     const wrap = document.getElementById('taskTagsWrap');
     if (wrap) {
       wrap.innerHTML = (updated.tags || []).map(t => `
-        <span class="tag-chip" style="background:${t.color}22;color:${t.color}">
+        <span class="tag-chip" style="background:${safeColor(t.color)}22;color:${safeColor(t.color)}">
           ${escHtml(t.name)}
           <span class="tag-remove" onclick="removeTagFromTask(${taskId}, ${t.id})">✕</span>
         </span>
