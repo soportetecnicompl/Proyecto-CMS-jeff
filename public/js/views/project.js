@@ -28,7 +28,10 @@ async function renderProject(id) {
     ]);
     _projectData = project;
 
-    api.getCompanyUsers(project.company_id).then(users => { _projectUsers = users; }).catch(() => {});
+    // Cargar usuarios en paralelo con el resto — garantizar que estén listos
+    api.getCompanyUsers(project.company_id)
+      .then(users => { _projectUsers = users; })
+      .catch(() => { _projectUsers = []; });
 
     document.getElementById('companyLink').textContent = project.company_name;
     document.getElementById('companyLink').onclick = () => App.navigate(`empresa/${project.company_id}`);
@@ -606,7 +609,10 @@ window.submitCreateTask = async function(projectId) {
 
 window.openEditTask = async function(taskId) {
   const task = await api.getTask(taskId);
-  const users = _projectUsers;
+  // Si los usuarios aún no cargaron, esperarlos ahora
+  const users = _projectUsers.length > 0
+    ? _projectUsers
+    : await api.getCompanyUsers(_projectData?.company_id || task.company_id).catch(() => []);
 
   createModal({
     id: 'modalEditTask',
