@@ -30,6 +30,7 @@ const App = {
 
   setupRouter() {
     window.addEventListener('hashchange', () => this.route());
+    window.addEventListener('resize', () => this.initMobileBar());
   },
 
   route() {
@@ -37,6 +38,9 @@ const App = {
     const parts = hash.split('/');
 
     if (!this.user) { this.renderLogin(); return; }
+
+    // Init mobile bar after each route
+    setTimeout(() => this.initMobileBar(), 0);
 
     if (hash === '' || hash === 'dashboard') {
       renderDashboard();
@@ -64,6 +68,21 @@ const App = {
 
   navigate(path) {
     window.location.hash = path ? `/${path}` : '';
+  },
+
+  openSidebar() {
+    document.getElementById('appSidebar')?.classList.add('open');
+    document.getElementById('sidebarOverlay')?.classList.add('open');
+  },
+
+  closeSidebar() {
+    document.getElementById('appSidebar')?.classList.remove('open');
+    document.getElementById('sidebarOverlay')?.classList.remove('open');
+  },
+
+  initMobileBar() {
+    const bar = document.getElementById('mobileTopBar');
+    if (bar) bar.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
   },
 
   logout() {
@@ -293,8 +312,9 @@ function renderAppShell(activeSection, content) {
   ];
 
   return `
-    <div class="app-layout">
-      <aside class="sidebar">
+    <div class="app-layout" id="appLayout">
+      <div class="sidebar-overlay" id="sidebarOverlay" onclick="App.closeSidebar()"></div>
+      <aside class="sidebar" id="appSidebar">
         <div class="sidebar-logo">
           <div class="logo-icon">🗂️</div>
           <div>
@@ -306,7 +326,7 @@ function renderAppShell(activeSection, content) {
           <div class="nav-section-title">Navegación</div>
           ${navItems.map(item => `
             <a class="nav-item ${activeSection === item.id || (activeSection === 'empresa' && item.id === 'dashboard') || (activeSection === 'proyecto' && item.id === 'dashboard') || (activeSection === 'tarea' && item.id === 'dashboard') ? 'active' : ''}"
-              href="#${item.path}" onclick="">
+              href="#${item.path}" onclick="App.closeSidebar()">
               <span class="icon">${item.icon}</span>
               <span>${item.label}</span>
             </a>
@@ -322,6 +342,9 @@ function renderAppShell(activeSection, content) {
         </div>
       </aside>
       <main class="main-content">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 20px 0;display:none" id="mobileTopBar">
+          <button class="hamburger-btn" onclick="App.openSidebar()" aria-label="Abrir menú">☰</button>
+        </div>
         ${content}
       </main>
     </div>
