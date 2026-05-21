@@ -447,10 +447,17 @@ window.toggleSubtaskForm = function() {
   }
 };
 
+// Guardia: loadTaskAttachments se implementa en Task 5; aquí prevenimos ReferenceError
+if (typeof loadTaskAttachments === 'undefined') {
+  window.loadTaskAttachments = function() {};
+}
+
 window.submitSubtask = async function(parentTaskId) {
   const titleEl = document.getElementById('subtaskTitle');
+  const btnEl = document.querySelector('#subtaskFormRow .btn-primary');
   const title = titleEl?.value.trim();
   if (!title) return;
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '...'; }
 
   try {
     const task = _taskData;
@@ -468,7 +475,9 @@ window.submitSubtask = async function(parentTaskId) {
     _taskData = updated;
     renderTaskContent(updated);
     loadTaskComments(parentTaskId);
+    loadTaskAttachments(parentTaskId);
   } catch (err) {
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Crear'; }
     toast('Error: ' + err.message, 'error');
   }
 };
