@@ -115,6 +115,9 @@ const api = {
   getTaskDependencies: (taskId) => api.get(`/tasks/${taskId}/dependencies`),
   addDependency: (taskId, dependsOnId) => api.post(`/tasks/${taskId}/dependencies`, { depends_on_id: dependsOnId }),
   removeDependency: (taskId, depId) => api.delete(`/tasks/${taskId}/dependencies/${depId}`),
+
+  // Search
+  search: (q) => api.get(`/search?q=${encodeURIComponent(q)}`),
 };
 
 // Shared HTML escaping — defined once here, available globally

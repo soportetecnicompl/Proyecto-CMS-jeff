@@ -1261,3 +1261,19 @@ select.form-control { cursor: pointer; }
 .upload-zone { border:2px dashed var(--gray-200); border-radius:8px; padding:12px; text-align:center; cursor:pointer; transition:border-color .15s; }
 .upload-zone:hover { border-color:var(--primary); }
 
+/* ── Búsqueda global ─────────────────────────────────────────── */
+.search-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:500; display:flex; align-items:flex-start; justify-content:center; padding-top:80px; }
+.search-modal { background:var(--white,white); border-radius:12px; width:100%; max-width:560px; box-shadow:var(--shadow-lg); overflow:hidden; }
+.search-input-wrap { display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--gray-100); }
+.search-input-wrap input { flex:1; border:none; outline:none; font-size:16px; background:transparent; color:var(--gray-900); }
+.search-results { max-height:420px; overflow-y:auto; }
+.search-section-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--gray-400); padding:10px 16px 4px; }
+.search-result-item { display:flex; align-items:center; gap:10px; padding:10px 16px; cursor:pointer; transition:background .1s; }
+.search-result-item:hover { background:var(--gray-50); }
+.search-result-item .result-icon { font-size:16px; width:24px; text-align:center; flex-shrink:0; }
+.search-result-item .result-body { flex:1; min-width:0; }
+.search-result-item .result-title { font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.search-result-item .result-meta { font-size:12px; color:var(--gray-500); }
+.search-empty { padding:32px; text-align:center; color:var(--gray-400); font-size:14px; }
+.search-hint { padding:10px 16px; font-size:11px; color:var(--gray-400); border-top:1px solid var(--gray-100); text-align:center; }
+

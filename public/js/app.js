@@ -31,6 +31,13 @@ const App = {
   setupRouter() {
     window.addEventListener('hashchange', () => this.route());
     window.addEventListener('resize', () => this.initMobileBar());
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        App.openSearch();
+      }
+      if (e.key === 'Escape') App.closeSearch();
+    });
   },
 
   route() {
@@ -68,6 +75,95 @@ const App = {
 
   navigate(path) {
     window.location.hash = path ? `/${path}` : '';
+  },
+
+  openSearch() {
+    const existing = document.getElementById('searchOverlay');
+    if (existing) { existing.querySelector('#globalSearchInput')?.focus(); return; }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'searchOverlay';
+    overlay.className = 'search-overlay';
+    overlay.innerHTML = `
+      <div class="search-modal">
+        <div class="search-input-wrap">
+          <span style="font-size:18px">🔍</span>
+          <input id="globalSearchInput" placeholder="Buscar proyectos, tareas..." autocomplete="off">
+          <button class="btn btn-ghost btn-sm" onclick="App.closeSearch()">✕</button>
+        </div>
+        <div class="search-results" id="searchResults">
+          <div class="search-empty">Escribe al menos 2 caracteres para buscar...</div>
+        </div>
+        <div class="search-hint">Ctrl+K para abrir · Esc para cerrar</div>
+      </div>
+    `;
+    overlay.addEventListener('click', e => { if (e.target === overlay) App.closeSearch(); });
+    document.body.appendChild(overlay);
+
+    const input = document.getElementById('globalSearchInput');
+    input.focus();
+
+    let _debounceTimer;
+    input.addEventListener('input', () => {
+      clearTimeout(_debounceTimer);
+      const q = input.value.trim();
+      if (q.length < 2) {
+        document.getElementById('searchResults').innerHTML = '<div class="search-empty">Escribe al menos 2 caracteres para buscar...</div>';
+        return;
+      }
+      document.getElementById('searchResults').innerHTML = '<div class="search-empty">Buscando...</div>';
+      _debounceTimer = setTimeout(() => App._doSearch(q), 300);
+    });
+  },
+
+  closeSearch() {
+    document.getElementById('searchOverlay')?.remove();
+  },
+
+  async _doSearch(q) {
+    try {
+      const { tasks, projects } = await api.search(q);
+      const container = document.getElementById('searchResults');
+      if (!container) return;
+
+      if (!tasks.length && !projects.length) {
+        container.innerHTML = `<div class="search-empty">Sin resultados para "${escHtml(q)}"</div>`;
+        return;
+      }
+
+      let html = '';
+
+      if (projects.length) {
+        html += `<div class="search-section-title">📁 Proyectos</div>`;
+        html += projects.map(p => `
+          <div class="search-result-item" onclick="App.closeSearch(); App.navigate('proyecto/${p.id}')">
+            <span class="result-icon">📁</span>
+            <div class="result-body">
+              <div class="result-title">${escHtml(p.name)}</div>
+              <div class="result-meta">${escHtml(p.company_name)} · <span class="status-badge status-${p.status}" style="font-size:10px">${statusLabel(p.status)}</span></div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      if (tasks.length) {
+        html += `<div class="search-section-title">✅ Tareas</div>`;
+        html += tasks.map(t => `
+          <div class="search-result-item" onclick="App.closeSearch(); App.navigate('tarea/${t.id}')">
+            <span class="result-icon">${priorityIcon(t.priority)}</span>
+            <div class="result-body">
+              <div class="result-title">${escHtml(t.title)}</div>
+              <div class="result-meta">${escHtml(t.project_name)} · ${escHtml(t.company_name)}</div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      container.innerHTML = html;
+    } catch (err) {
+      const container = document.getElementById('searchResults');
+      if (container) container.innerHTML = `<div class="search-empty" style="color:var(--danger)">Error: ${escHtml(err.message)}</div>`;
+    }
   },
 
   openSidebar() {
@@ -324,6 +420,11 @@ function renderAppShell(activeSection, content) {
         </div>
         <nav class="sidebar-nav">
           <div class="nav-section-title">Navegación</div>
+          <div class="nav-item" onclick="App.openSearch()" style="cursor:pointer">
+            <span class="icon">🔍</span>
+            <span>Buscar</span>
+            <span style="margin-left:auto;font-size:10px;opacity:.5;background:rgba(255,255,255,.1);padding:1px 5px;border-radius:4px">Ctrl+K</span>
+          </div>
           ${navItems.map(item => `
             <a class="nav-item ${activeSection === item.id || (activeSection === 'empresa' && item.id === 'dashboard') || (activeSection === 'proyecto' && item.id === 'dashboard') || (activeSection === 'tarea' && item.id === 'dashboard') ? 'active' : ''}"
               href="#${item.path}" onclick="App.closeSidebar()">
