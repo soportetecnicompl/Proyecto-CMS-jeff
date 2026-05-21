@@ -1248,3 +1248,16 @@ select.form-control { cursor: pointer; }
 .tag-option:hover { border-color: rgba(0,0,0,.2); }
 .tag-option.selected { border-color: rgba(0,0,0,.4); }
 
+/* ── Dependencias ────────────────────────────────────────────── */
+.dep-item { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--gray-100); font-size:13px; }
+.dep-item:last-child { border-bottom:none; }
+.dep-blocked-badge { background:#fee2e2; color:#b91c1c; font-size:11px; padding:2px 7px; border-radius:4px; font-weight:600; }
+
+/* ── Archivos adjuntos ───────────────────────────────────────── */
+.attachment-item { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--gray-100); font-size:13px; }
+.attachment-item:last-child { border-bottom:none; }
+.attachment-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:160px; }
+.attachment-size { font-size:11px; color:var(--gray-400); }
+.upload-zone { border:2px dashed var(--gray-200); border-radius:8px; padding:12px; text-align:center; cursor:pointer; transition:border-color .15s; }
+.upload-zone:hover { border-color:var(--primary); }
+

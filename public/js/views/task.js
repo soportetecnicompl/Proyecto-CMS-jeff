@@ -30,6 +30,7 @@ async function renderTask(id) {
 
     renderTaskContent(task);
     loadTaskComments(id);
+    loadTaskAttachments(id);
   } catch (err) {
     toast(err.message, 'error');
   }
@@ -193,6 +194,36 @@ function renderTaskContent(task) {
             ` : `<p class="text-sm text-gray mb-3">Total: <strong>${loggedHours.toFixed(1)}h</strong></p>`}
             <div id="timeLogsList">
               ${renderTimeLogs(task.time_logs || [], task.id)}
+            </div>
+          </div>
+        </div>
+
+        <!-- Dependencies -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <span class="card-title">🔗 Dependencias</span>
+            <button class="btn btn-primary btn-sm" onclick="openAddDependency(${task.id}, ${task.project_id})">+ Agregar</button>
+          </div>
+          <div class="card-body" id="depsList">
+            ${renderDepsList(task.dependencies || [], task.id)}
+          </div>
+        </div>
+
+        <!-- Attachments -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📎 Adjuntos</span>
+          </div>
+          <div class="card-body">
+            <div class="upload-zone" onclick="document.getElementById('attachInput').click()">
+              <div class="text-sm text-gray">📁 Click para subir archivo</div>
+              <div class="text-xs text-gray">Máx. 10 MB — JPG, PNG, PDF, DOC, XLS, ZIP, CSV</div>
+            </div>
+            <input type="file" id="attachInput" style="display:none"
+              accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.csv"
+              onchange="uploadAttachment(${task.id}, this)">
+            <div id="attachmentsList" class="mt-3">
+              ${renderAttachmentsList(task.attachments || [], task.id)}
             </div>
           </div>
         </div>
@@ -461,10 +492,123 @@ window.toggleSubtaskForm = function() {
   }
 };
 
-// Guardia: loadTaskAttachments se implementa en Task 5; aquí prevenimos ReferenceError
-if (typeof loadTaskAttachments === 'undefined') {
-  window.loadTaskAttachments = function() {};
+function renderDepsList(deps, taskId) {
+  if (!deps.length) return '<p class="text-sm text-gray">Sin dependencias.</p>';
+  return deps.map(d => `
+    <div class="dep-item">
+      <div>
+        <a href="#" onclick="event.preventDefault();App.navigate('tarea/${d.id}')" class="text-sm font-semibold">${escHtml(d.title)}</a>
+        <span class="status-badge status-${d.status}" style="font-size:10px;margin-left:4px">${statusLabel(d.status)}</span>
+        ${d.status !== 'completada' ? '<span class="dep-blocked-badge" style="margin-left:4px">Bloqueada</span>' : ''}
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="removeDep(${taskId}, ${d.id})">✕</button>
+    </div>
+  `).join('');
 }
+
+function renderAttachmentsList(attachments, taskId) {
+  if (!attachments.length) return '<p class="text-sm text-gray">Sin archivos adjuntos.</p>';
+  return attachments.map(a => `
+    <div class="attachment-item">
+      <div style="overflow:hidden">
+        <div class="attachment-name" title="${escHtml(a.original_name)}">📄 ${escHtml(a.original_name)}</div>
+        <div class="attachment-size">${(a.size / 1024).toFixed(1)} KB · ${escHtml(a.user_name)} · ${timeAgo(a.created_at)}</div>
+      </div>
+      <div class="flex gap-2">
+        <a href="/api/attachments/${a.id}/download" class="btn btn-ghost btn-sm" title="Descargar">⬇</a>
+        ${a.user_id === App.user.id || App.user.role === 'admin' ? `
+          <button class="btn btn-ghost btn-sm" onclick="deleteAttachmentItem(${a.id}, ${taskId})">🗑️</button>
+        ` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+window.openAddDependency = async function(taskId, projectId) {
+  const tasks = await api.getTasks(projectId);
+  const current = (_taskData.dependencies || []).map(d => d.id);
+  const available = tasks.filter(t => t.id !== taskId && !current.includes(t.id));
+
+  if (!available.length) {
+    toast('No hay otras tareas disponibles para agregar como dependencia', 'info');
+    return;
+  }
+
+  createModal({
+    id: 'modalAddDep',
+    title: 'Agregar Dependencia',
+    body: `
+      <p class="text-sm text-gray mb-3">Esta tarea no podrá completarse hasta que la tarea seleccionada esté completada.</p>
+      <div class="form-group">
+        <label class="form-label">Tarea bloqueante</label>
+        <select class="form-control" id="depSelect">
+          <option value="">Seleccionar tarea...</option>
+          ${available.map(t => `<option value="${t.id}">${escHtml(t.title)} (${statusLabel(t.status)})</option>`).join('')}
+        </select>
+      </div>
+    `,
+    footer: `
+      <button class="btn btn-secondary" onclick="hideModal('modalAddDep')">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitAddDep(${taskId})">Agregar</button>
+    `
+  });
+  showModal('modalAddDep');
+};
+
+window.submitAddDep = async function(taskId) {
+  const depId = document.getElementById('depSelect')?.value;
+  if (!depId) return;
+  try {
+    await api.addDependency(taskId, depId);
+    hideModal('modalAddDep');
+    toast('Dependencia agregada', 'success');
+    const updated = await api.getTask(taskId);
+    _taskData = updated;
+    const list = document.getElementById('depsList');
+    if (list) list.innerHTML = renderDepsList(updated.dependencies || [], taskId);
+  } catch (err) { toast(err.message, 'error'); }
+};
+
+window.removeDep = async function(taskId, depId) {
+  try {
+    await api.removeDependency(taskId, depId);
+    const updated = await api.getTask(taskId);
+    _taskData = updated;
+    const list = document.getElementById('depsList');
+    if (list) list.innerHTML = renderDepsList(updated.dependencies || [], taskId);
+    toast('Dependencia eliminada', 'success');
+  } catch (err) { toast(err.message, 'error'); }
+};
+
+async function loadTaskAttachments(taskId) {
+  try {
+    const attachments = await api.getAttachments(taskId);
+    const list = document.getElementById('attachmentsList');
+    if (list) list.innerHTML = renderAttachmentsList(attachments, taskId);
+  } catch { /* silencioso */ }
+}
+
+window.uploadAttachment = async function(taskId, input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+  try {
+    toast('Subiendo archivo...', 'info');
+    await api.uploadAttachment(taskId, file);
+    toast('Archivo subido', 'success');
+    loadTaskAttachments(taskId);
+  } catch (err) { toast(err.message, 'error'); }
+};
+
+window.deleteAttachmentItem = async function(attachId, taskId) {
+  confirm('¿Eliminar este archivo?', async () => {
+    try {
+      await api.deleteAttachment(attachId);
+      loadTaskAttachments(taskId);
+      toast('Archivo eliminado', 'success');
+    } catch (err) { toast(err.message, 'error'); }
+  });
+};
 
 window.submitSubtask = async function(parentTaskId) {
   const titleEl = document.getElementById('subtaskTitle');
