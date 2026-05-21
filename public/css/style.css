@@ -1232,3 +1232,8 @@ select.form-control { cursor: pointer; }
 .chart-canvas-wrap { position:relative; height:220px; }
 .activity-item { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--gray-100); }
 .activity-item:last-child { border-bottom:none; }
+
+/* ── Subtareas inline ────────────────────────────────────────── */
+.subtask-add-row { display:flex; gap:8px; margin-top:8px; }
+.subtask-add-row input { flex:1; }
+.subtask-progress { font-size:11px; color:var(--gray-500); margin-left:8px; }

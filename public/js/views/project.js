@@ -288,7 +288,7 @@ function renderTaskList(tasks) {
           ${task.estimated_hours ? `<span>⏱️ ${task.estimated_hours}h est.</span>` : ''}
           ${task.due_date ? `<span class="${isDueDate(task.due_date, task.status) ? 'text-danger' : ''}">📅 ${formatDate(task.due_date)}</span>` : ''}
           ${task.comment_count > 0 ? `<span>💬 ${task.comment_count}</span>` : ''}
-          ${task.subtasks?.length ? `<span>🔀 ${task.subtasks.length} subtareas</span>` : ''}
+          ${task.subtasks?.length ? `<span>🔀 ${task.subtasks.filter(s=>s.status==='completada').length}/${task.subtasks.length} subtareas</span>` : ''}
         </div>
       </div>
       ${canEdit ? `

@@ -71,10 +71,23 @@ function renderTaskContent(task) {
             ` : ''}
 
             <!-- Subtasks -->
-            ${task.subtasks && task.subtasks.length ? `
-              <div class="mb-4">
-                <h4 class="text-sm font-semibold mb-2">Subtareas (${task.subtasks.length})</h4>
-                ${task.subtasks.map(s => `
+            <div class="mb-4" id="subtasksSection">
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="text-sm font-semibold">
+                  Subtareas
+                  ${task.subtasks && task.subtasks.length ? `
+                    <span class="subtask-progress">(${task.subtasks.filter(s=>s.status==='completada').length}/${task.subtasks.length} completadas)</span>
+                  ` : ''}
+                </h4>
+                <button class="btn btn-ghost btn-sm" onclick="toggleSubtaskForm()">+ Agregar</button>
+              </div>
+              <div id="subtaskFormRow" class="subtask-add-row hidden">
+                <input class="form-control" id="subtaskTitle" placeholder="Título de la subtarea..." onkeydown="if(event.key==='Enter') submitSubtask(${task.id})">
+                <button class="btn btn-primary btn-sm" onclick="submitSubtask(${task.id})">Crear</button>
+                <button class="btn btn-ghost btn-sm" onclick="toggleSubtaskForm()">✕</button>
+              </div>
+              <div id="subtaskList">
+                ${task.subtasks && task.subtasks.length ? task.subtasks.map(s => `
                   <div class="task-item" onclick="App.navigate('tarea/${s.id}')">
                     <div class="task-checkbox ${s.status==='completada'?'done':''}">
                       ${s.status==='completada'?'✓':''}
@@ -87,9 +100,9 @@ function renderTaskContent(task) {
                       </div>
                     </div>
                   </div>
-                `).join('')}
+                `).join('') : '<p class="text-sm text-gray" id="noSubtasksMsg">Sin subtareas aún.</p>'}
               </div>
-            ` : ''}
+            </div>
           </div>
         </div>
 
@@ -422,6 +435,41 @@ window.submitEditTaskFull = async function(taskId) {
   } catch (err) {
     errEl.textContent = err.message;
     errEl.classList.remove('hidden');
+  }
+};
+
+window.toggleSubtaskForm = function() {
+  const row = document.getElementById('subtaskFormRow');
+  if (!row) return;
+  row.classList.toggle('hidden');
+  if (!row.classList.contains('hidden')) {
+    document.getElementById('subtaskTitle')?.focus();
+  }
+};
+
+window.submitSubtask = async function(parentTaskId) {
+  const titleEl = document.getElementById('subtaskTitle');
+  const title = titleEl?.value.trim();
+  if (!title) return;
+
+  try {
+    const task = _taskData;
+    await api.createTask({
+      project_id: task.project_id,
+      title,
+      parent_task_id: parentTaskId,
+      status: 'pendiente',
+      priority: 'media',
+    });
+    titleEl.value = '';
+    document.getElementById('subtaskFormRow').classList.add('hidden');
+    toast('Subtarea creada', 'success');
+    const updated = await api.getTask(parentTaskId);
+    _taskData = updated;
+    renderTaskContent(updated);
+    loadTaskComments(parentTaskId);
+  } catch (err) {
+    toast('Error: ' + err.message, 'error');
   }
 };
 
