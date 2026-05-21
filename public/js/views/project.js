@@ -75,6 +75,9 @@ function renderProjectContent(project, tasks) {
   const canEdit = App.user.role === 'admin' || ['admin', 'member'].includes(project.my_company_role);
 
   document.getElementById('projectHeaderActions').innerHTML = `
+    <button class="btn btn-ghost btn-sm" onclick="exportProjectCSV()" title="Exportar CSV">📥 CSV</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportProjectExcel()" title="Exportar Excel">📊 Excel</button>
+    <button class="btn btn-ghost btn-sm" onclick="printProject()" title="Imprimir / PDF">🖨️</button>
     ${canEdit ? `<button class="btn btn-primary btn-sm" onclick="openCreateTask(${project.id})">+ Tarea</button>` : ''}
     ${canEdit ? `<button class="btn btn-secondary btn-sm" onclick="openEditProject(${project.id})">✏️ Editar</button>` : ''}
   `;
@@ -87,6 +90,14 @@ function renderProjectContent(project, tasks) {
   const loggedHours = tasks.reduce((s, t) => s + (t.actual_hours || 0), 0);
 
   body.innerHTML = `
+    <!-- Print header (solo visible en print) -->
+    <div class="print-header">
+      <h1 style="font-size:20px;font-weight:700">${escHtml(project.name)}</h1>
+      <p style="color:#666;margin:4px 0">Empresa: ${escHtml(project.company_name || '')} · Estado: ${statusLabel(project.status)} · Progreso: ${pct}%</p>
+      <p style="color:#666;font-size:11px">Exportado el ${new Date().toLocaleDateString('es-ES', {day:'2-digit',month:'long',year:'numeric'})}</p>
+      <hr style="margin:12px 0">
+    </div>
+
     <!-- Project Info -->
     <div class="grid-4 mb-6">
       <div class="stat-card">
@@ -1099,6 +1110,71 @@ window.deleteProject = function(id) {
       App.navigate(`empresa/${companyId}`);
     } catch (err) { toast(err.message, 'error'); }
   });
+};
+
+window.exportProjectCSV = function() {
+  const tasks = window._allTasks || [];
+  const project = _projectData;
+  if (!tasks.length) { toast('No hay tareas para exportar', 'warning'); return; }
+
+  const headers = ['ID','Título','Estado','Prioridad','Asignado','Horas Est.','Horas Reg.','Vencimiento','Creado'];
+  const rows = tasks.map(t => [
+    t.id,
+    t.title,
+    statusLabel(t.status),
+    priorityLabel(t.priority),
+    t.assigned_name || '',
+    t.estimated_hours || '',
+    t.actual_hours || '',
+    t.due_date || '',
+    t.created_at ? new Date(t.created_at).toLocaleDateString('es-ES') : ''
+  ]);
+
+  const csv = [headers, ...rows].map(r =>
+    r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
+  ).join('\r\n');
+
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${(project?.name || 'proyecto').replace(/[^a-z0-9]/gi,'_')}_tareas.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV descargado', 'success');
+};
+
+window.exportProjectExcel = function() {
+  if (typeof XLSX === 'undefined') { toast('SheetJS no disponible', 'error'); return; }
+  const tasks = window._allTasks || [];
+  const project = _projectData;
+  if (!tasks.length) { toast('No hay tareas para exportar', 'warning'); return; }
+
+  const data = [
+    ['ID','Título','Estado','Prioridad','Asignado','Horas Est.','Horas Reg.','Vencimiento','Creado'],
+    ...tasks.map(t => [
+      t.id,
+      t.title,
+      statusLabel(t.status),
+      priorityLabel(t.priority),
+      t.assigned_name || '',
+      t.estimated_hours || '',
+      t.actual_hours || '',
+      t.due_date || '',
+      t.created_at ? new Date(t.created_at).toLocaleDateString('es-ES') : ''
+    ])
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [8,40,14,12,20,10,10,14,12].map(w => ({ wch: w }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Tareas');
+  XLSX.writeFile(wb, `${(project?.name || 'proyecto').replace(/[^a-z0-9]/gi,'_')}_tareas.xlsx`);
+  toast('Excel descargado', 'success');
+};
+
+window.printProject = function() {
+  window.print();
 };
 
 window.openCreateTask = openCreateTask;

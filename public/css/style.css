@@ -1277,3 +1277,14 @@ select.form-control { cursor: pointer; }
 .search-empty { padding:32px; text-align:center; color:var(--gray-400); font-size:14px; }
 .search-hint { padding:10px 16px; font-size:11px; color:var(--gray-400); border-top:1px solid var(--gray-100); text-align:center; }
 
+/* ── Print / Export ──────────────────────────────────────────── */
+@media print {
+  .sidebar, .page-header, .tabs, .tab-pane:not(#tabTasks),
+  .task-item-actions, .btn, #mobileTopBar, .sidebar-overlay,
+  .toast-container { display:none !important; }
+  .main-content { margin-left:0 !important; }
+  .task-item { break-inside:avoid; border-bottom:1px solid #ddd; padding:6px 0; }
+  body { background:white; font-size:12px; }
+  .print-header { display:block !important; margin-bottom:16px; }
+}
+.print-header { display:none; }
