@@ -1073,6 +1073,21 @@ function openEditProject(projectId) {
           <input class="form-control" type="date" id="epEnd" value="${p.end_date || ''}">
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Valor del Contrato (L)</label>
+          <input class="form-control" type="number" step="0.01" id="epContractValue" value="${p.contract_value || ''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Frecuencia de Facturación</label>
+          <select class="form-control" id="epBillingFreq">
+            <option value="proyecto" ${(p.billing_frequency||'proyecto')==='proyecto'?'selected':''}>Por proyecto</option>
+            <option value="mensual" ${p.billing_frequency==='mensual'?'selected':''}>Mensual</option>
+            <option value="trimestral" ${p.billing_frequency==='trimestral'?'selected':''}>Trimestral</option>
+            <option value="anual" ${p.billing_frequency==='anual'?'selected':''}>Anual</option>
+          </select>
+        </div>
+      </div>
     `,
     footer: `
       <button class="btn btn-secondary" onclick="hideModal('modalEditProject')">Cancelar</button>
@@ -1096,6 +1111,8 @@ window.submitEditProject = async function(id) {
       priority: document.getElementById('epPriority').value,
       start_date: document.getElementById('epStart').value || null,
       end_date: document.getElementById('epEnd').value || null,
+      contract_value: document.getElementById('epContractValue').value || null,
+      billing_frequency: document.getElementById('epBillingFreq').value,
     });
     _projectData = updated;
     hideModal('modalEditProject');

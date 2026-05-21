@@ -76,6 +76,7 @@ function renderCompanyContent(company, projects) {
       <button class="tab-btn active" onclick="switchTab('tabProjects', this)">📁 Proyectos (${projects.length})</button>
       <button class="tab-btn" onclick="switchTab('tabMembers', this)">👥 Miembros</button>
       ${canEdit ? `<button class="tab-btn" onclick="switchTab('tabInvitations', this); loadInvitations(${company.id})">✉️ Invitaciones</button>` : ''}
+      ${canEdit ? `<button class="tab-btn" onclick="switchTab('tabFiscal', this)">🏛️ Datos Fiscales</button>` : ''}
     </div>
 
     <!-- Projects tab -->
@@ -154,6 +155,29 @@ function renderCompanyContent(company, projects) {
     <div class="tab-pane" id="tabInvitations">
       <div id="invitationsContent">
         <div class="loading-overlay"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- Fiscal data tab -->
+    <div class="tab-pane" id="tabFiscal">
+      <div class="card" style="max-width:600px">
+        <div class="card-header"><span class="card-title">Datos Fiscales del Cliente</span></div>
+        <div class="card-body">
+          <div id="fiscalSaveMsg" class="form-error hidden"></div>
+          <div class="form-group">
+            <label class="form-label">RTN del Cliente</label>
+            <input class="form-control" id="companyRtn" placeholder="0000-0000-000000" value="${escHtml(company.rtn||'')}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Razón Social Fiscal</label>
+            <input class="form-control" id="companyFiscalName" placeholder="Nombre legal" value="${escHtml(company.fiscal_name||'')}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Dirección Fiscal</label>
+            <input class="form-control" id="companyFiscalAddr" placeholder="Dirección fiscal" value="${escHtml(company.fiscal_address||'')}">
+          </div>
+          <button class="btn btn-primary" onclick="saveFiscalData(${company.id})">Guardar</button>
+        </div>
       </div>
     </div>
   `;
@@ -505,4 +529,14 @@ window.openCreateProject = openCreateProject;
 window.switchTab = switchTab;
 window.loadInvitations = loadInvitations;
 
+window.saveFiscalData = async function(companyId) {
+  try {
+    await api.updateCompanyFiscal(companyId, {
+      rtn: document.getElementById('companyRtn').value.trim() || null,
+      fiscal_name: document.getElementById('companyFiscalName').value.trim() || null,
+      fiscal_address: document.getElementById('companyFiscalAddr').value.trim() || null,
+    });
+    toast('Datos fiscales guardados', 'success');
+  } catch (err) { toast(err.message, 'error'); }
+};
 

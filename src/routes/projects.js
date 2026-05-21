@@ -98,12 +98,13 @@ router.put('/:id', (req, res) => {
     return res.status(403).json({ error: 'Sin acceso' });
   }
 
-  const { name, description, status, priority, start_date, end_date, progress } = req.body;
+  const { name, description, status, priority, start_date, end_date, progress, contract_value, billing_frequency } = req.body;
 
   db.prepare(`
     UPDATE projects SET
       name = ?, description = ?, status = ?, priority = ?,
-      start_date = ?, end_date = ?, progress = ?
+      start_date = ?, end_date = ?, progress = ?,
+      contract_value = ?, billing_frequency = ?
     WHERE id = ?
   `).run(
     name !== undefined ? name : project.name,
@@ -113,6 +114,8 @@ router.put('/:id', (req, res) => {
     start_date !== undefined ? start_date : project.start_date,
     end_date !== undefined ? end_date : project.end_date,
     progress !== undefined ? progress : project.progress,
+    contract_value !== undefined ? contract_value : project.contract_value,
+    billing_frequency !== undefined ? billing_frequency : project.billing_frequency,
     req.params.id
   );
 

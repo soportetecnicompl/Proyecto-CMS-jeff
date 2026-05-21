@@ -91,9 +91,10 @@ router.put('/:id', (req, res) => {
     }
   }
 
-  const { name, description, color, website, phone, address } = req.body;
+  const { name, description, color, website, phone, address, rtn, fiscal_name, fiscal_address } = req.body;
   db.prepare(`
-    UPDATE companies SET name = ?, description = ?, color = ?, website = ?, phone = ?, address = ?
+    UPDATE companies SET name = ?, description = ?, color = ?, website = ?, phone = ?, address = ?,
+      rtn = ?, fiscal_name = ?, fiscal_address = ?
     WHERE id = ?
   `).run(
     name || company.name,
@@ -102,6 +103,9 @@ router.put('/:id', (req, res) => {
     website !== undefined ? website : company.website,
     phone !== undefined ? phone : company.phone,
     address !== undefined ? address : company.address,
+    rtn !== undefined ? rtn : company.rtn,
+    fiscal_name !== undefined ? fiscal_name : company.fiscal_name,
+    fiscal_address !== undefined ? fiscal_address : company.fiscal_address,
     req.params.id
   );
 
