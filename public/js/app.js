@@ -73,6 +73,12 @@ const App = {
       renderUsers();
     } else if (hash === 'perfil') {
       this.renderProfile();
+    } else if (hash === 'facturacion') {
+      if (this.user.role !== 'admin') { this.navigate(''); return; }
+      renderBilling();
+    } else if (hash === 'config-fiscal') {
+      if (this.user.role !== 'admin') { this.navigate(''); return; }
+      renderFiscalConfig();
     } else {
       renderDashboard();
     }
@@ -507,6 +513,10 @@ function renderAppShell(activeSection, content) {
     { id: 'dashboard', icon: '🏠', label: 'Inicio', path: '' },
     { id: 'automatizaciones', icon: '⚡', label: 'Automatizaciones', path: 'automatizaciones' },
     ...(u.role === 'admin' ? [{ id: 'usuarios', icon: '👥', label: 'Usuarios', path: 'usuarios' }] : []),
+    ...(u.role === 'admin' ? [
+      { id: 'facturacion', icon: '💰', label: 'Facturación', path: 'facturacion' },
+      { id: 'config-fiscal', icon: '🧾', label: 'Config. Fiscal', path: 'config-fiscal' },
+    ] : []),
     { id: 'perfil', icon: '👤', label: 'Mi Perfil', path: 'perfil' },
   ];
 

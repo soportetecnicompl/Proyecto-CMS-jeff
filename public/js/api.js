@@ -124,6 +124,33 @@ const api = {
   getNotifications: () => api.get('/notifications'),
   markAllRead: () => api.put('/notifications/read-all', {}),
   markRead: (id) => api.put(`/notifications/${id}/read`, {}),
+
+  // Fiscal config
+  getFiscalConfig: () => api.get('/fiscal-config'),
+  saveFiscalConfig: (data) => api.put('/fiscal-config', data),
+
+  // Invoices
+  getInvoices: (params = {}) => {
+    const q = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([,v]) => v))).toString();
+    return api.get(`/invoices${q ? '?' + q : ''}`);
+  },
+  getInvoice: (id) => api.get(`/invoices/${id}`),
+  createInvoice: (formData) => {
+    const headers = {};
+    if (api._token) headers['Authorization'] = `Bearer ${api._token}`;
+    return fetch('/api/invoices', { method: 'POST', headers, body: formData })
+      .then(async r => { const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || `Error ${r.status}`); return d; });
+  },
+  updateInvoice: (id, formData) => {
+    const headers = {};
+    if (api._token) headers['Authorization'] = `Bearer ${api._token}`;
+    return fetch(`/api/invoices/${id}`, { method: 'PUT', headers, body: formData })
+      .then(async r => { const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || `Error ${r.status}`); return d; });
+  },
+  deleteInvoice: (id) => api.delete(`/invoices/${id}`),
+  addPayment: (invoiceId, data) => api.post(`/invoices/${invoiceId}/payments`, data),
+  deletePayment: (invoiceId, paymentId) => api.delete(`/invoices/${invoiceId}/payments/${paymentId}`),
+  updateCompanyFiscal: (id, data) => api.put(`/companies/${id}`, data),
 };
 
 // Shared HTML escaping — defined once here, available globally
