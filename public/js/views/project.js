@@ -149,6 +149,7 @@ function renderProjectContent(project, tasks) {
       <button class="tab-btn" onclick="switchTab('tabKanban', this); renderKanban()">📌 Kanban</button>
       <button class="tab-btn" onclick="switchTab('tabCalendar', this); renderCalendar()">🗓️ Calendario</button>
       <button class="tab-btn" onclick="switchTab('tabPlanning', this); renderPlanning()">📅 Planificación</button>
+      <button class="tab-btn" onclick="switchTab('tabMetrics', this); renderMetrics(${project.id})">📊 Métricas</button>
       <button class="tab-btn" onclick="switchTab('tabComments', this); loadProjectComments(${project.id})">💬 Comentarios</button>
       <button class="tab-btn" onclick="switchTab('tabObservations', this); loadObservations(${project.id})">📝 Observaciones</button>
     </div>
@@ -195,6 +196,11 @@ function renderProjectContent(project, tasks) {
     <!-- Planning tab -->
     <div class="tab-pane" id="tabPlanning">
       <div id="planningContent"></div>
+    </div>
+
+    <!-- Metrics tab -->
+    <div class="tab-pane" id="tabMetrics">
+      <div id="metricsContent"></div>
     </div>
 
     <!-- Comments tab -->
@@ -469,6 +475,110 @@ function renderPlanning() {
       </div>
     </div>
   `;
+}
+
+async function renderMetrics(projectId) {
+  const container = document.getElementById('metricsContent');
+  if (!container) return;
+  container.innerHTML = '<div class="loading-overlay" style="position:relative;height:200px"><div class="spinner"></div></div>';
+
+  try {
+    const stats = await api.getProjectStats(projectId);
+
+    container.innerHTML = `
+      <div class="grid-2 mb-4">
+        <div class="card">
+          <div class="card-body">
+            <h4 class="card-title mb-3">Tareas por Estado</h4>
+            <div class="chart-canvas-wrap"><canvas id="chartStatus"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <h4 class="card-title mb-3">Tareas por Prioridad</h4>
+            <div class="chart-canvas-wrap"><canvas id="chartPriority"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-body">
+            <h4 class="card-title mb-3">Horas: Estimadas vs Registradas</h4>
+            <div class="chart-canvas-wrap"><canvas id="chartHours"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <h4 class="card-title mb-3">Actividad Reciente</h4>
+            <div id="activityList"></div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const statusColors = {
+      pendiente:'#6b7280', en_progreso:'#3b82f6',
+      en_revision:'#f59e0b', completada:'#10b981', cancelada:'#ef4444'
+    };
+    const priorityColors = { baja:'#10b981', media:'#3b82f6', alta:'#f97316', critica:'#ef4444' };
+
+    const sd = stats.tasksByStatus || [];
+    new Chart(document.getElementById('chartStatus'), {
+      type: 'doughnut',
+      data: {
+        labels: sd.map(s => statusLabel(s.status)),
+        datasets: [{ data: sd.map(s => s.count), backgroundColor: sd.map(s => statusColors[s.status] || '#6b7280'), borderWidth: 2 }]
+      },
+      options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }, maintainAspectRatio: false }
+    });
+
+    const pd = stats.tasksByPriority || [];
+    new Chart(document.getElementById('chartPriority'), {
+      type: 'bar',
+      data: {
+        labels: pd.map(p => priorityLabel(p.priority)),
+        datasets: [{ label: 'Tareas', data: pd.map(p => p.count), backgroundColor: pd.map(p => priorityColors[p.priority] || '#6b7280'), borderRadius: 4 }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        maintainAspectRatio: false
+      }
+    });
+
+    const h = stats.totalHours || {};
+    new Chart(document.getElementById('chartHours'), {
+      type: 'bar',
+      data: {
+        labels: ['Horas'],
+        datasets: [
+          { label: 'Estimadas', data: [parseFloat((h.estimated || 0).toFixed(1))], backgroundColor: '#3b82f6', borderRadius: 4 },
+          { label: 'Registradas', data: [parseFloat((h.actual || 0).toFixed(1))], backgroundColor: '#10b981', borderRadius: 4 }
+        ]
+      },
+      options: {
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { labels: { boxWidth: 12, font: { size: 11 } } } },
+        maintainAspectRatio: false
+      }
+    });
+
+    const acts = stats.recentActivity || [];
+    document.getElementById('activityList').innerHTML = acts.length
+      ? acts.map(a => `
+        <div class="activity-item">
+          <div class="comment-avatar" style="width:28px;height:28px;font-size:11px;flex-shrink:0">${avatarInitials(a.user_name)}</div>
+          <div>
+            <div class="text-sm"><strong>${escHtml(a.user_name)}</strong> — ${escHtml(a.description)}</div>
+            <div class="text-xs text-gray">${timeAgo(a.created_at)}</div>
+          </div>
+        </div>
+      `).join('')
+      : '<p class="text-sm text-gray">Sin actividad reciente.</p>';
+
+  } catch (err) {
+    container.innerHTML = `<div class="empty-state"><p class="text-danger">${escHtml(err.message)}</p></div>`;
+  }
 }
 
 function renderCalendar() {
@@ -990,6 +1100,7 @@ window.switchTab = switchTab;
 window.renderKanban = renderKanban;
 window.renderCalendar = renderCalendar;
 window.renderPlanning = renderPlanning;
+window.renderMetrics = renderMetrics;
 window.loadProjectComments = loadProjectComments;
 window.loadObservations = loadObservations;
 

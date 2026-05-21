@@ -1227,3 +1227,8 @@ select.form-control { cursor: pointer; }
 .cal-task.priority-media   { background:#dbeafe; color:#1d4ed8; }
 .cal-task.priority-baja    { background:#dcfce7; color:#15803d; }
 .cal-task-more { font-size:10px; color:var(--gray-500); padding:1px 4px; }
+
+/* ── Métricas / Charts ───────────────────────────────────────── */
+.chart-canvas-wrap { position:relative; height:220px; }
+.activity-item { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--gray-100); }
+.activity-item:last-child { border-bottom:none; }
