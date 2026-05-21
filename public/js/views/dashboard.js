@@ -196,10 +196,6 @@ window.submitCreateCompany = async function() {
   }
 };
 
-function escHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = str || '';
-  return d.innerHTML;
-}
+
 
 window.openCreateCompany = openCreateCompany;

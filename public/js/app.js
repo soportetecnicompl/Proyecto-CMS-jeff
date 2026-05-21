@@ -328,11 +328,7 @@ function renderAppShell(activeSection, content) {
   `;
 }
 
-function escHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = str || '';
-  return d.innerHTML;
-}
+
 
 function roleLabel(r) {
   return { admin: 'Administrador', member: 'Miembro', viewer: 'Observador' }[r] || r;

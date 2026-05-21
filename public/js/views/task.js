@@ -423,8 +423,4 @@ function isDueDatePast(date, status) {
   return new Date(date) < new Date();
 }
 
-function escHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = str || '';
-  return d.innerHTML;
-}
+

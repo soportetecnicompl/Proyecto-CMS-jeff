@@ -89,6 +89,13 @@ const api = {
   runAutomation: (id) => api.post(`/automations/${id}/run`, {}),
 };
 
+// Shared HTML escaping — defined once here, available globally
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+
 // Toast notifications
 function toast(msg, type = 'info') {
   const container = document.getElementById('toastContainer');

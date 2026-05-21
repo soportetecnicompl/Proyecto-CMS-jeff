@@ -505,8 +505,4 @@ window.openCreateProject = openCreateProject;
 window.switchTab = switchTab;
 window.loadInvitations = loadInvitations;
 
-function escHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = str || '';
-  return d.innerHTML;
-}
+
