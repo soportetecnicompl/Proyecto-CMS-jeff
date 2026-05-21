@@ -285,6 +285,7 @@ const App = {
 
   logout() {
     confirm('¿Estás seguro que quieres cerrar sesión?', () => {
+      if (this._sseSource) { this._sseSource.close(); this._sseSource = null; }
       api.clearToken();
       this.user = null;
       this.renderLogin();

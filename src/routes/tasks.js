@@ -147,7 +147,6 @@ router.post('/', (req, res) => {
         assignerName: req.user.name,
         taskId: task.id
       }).catch(err => console.error('Error enviando notificación:', err.message));
-    }
       createNotification(
         assigned_to,
         'task_assigned',
@@ -155,6 +154,7 @@ router.post('/', (req, res) => {
         `${req.user.name} te asignó: "${title}"`,
         'task', task.id
       );
+    }
   }
 
   // Auto-update project progress
@@ -204,7 +204,6 @@ router.put('/:id', (req, res) => {
         assignerName: req.user.name,
         taskId: task.id
       }).catch(() => {});
-    }
       createNotification(
         assigned_to,
         'task_assigned',
@@ -212,6 +211,7 @@ router.put('/:id', (req, res) => {
         `${req.user.name} te asignó: "${title || task.title}"`,
         'task', task.id
       );
+    }
   }
 
   updateProjectProgress(task.project_id);
