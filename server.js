@@ -26,6 +26,8 @@ app.use('/api/tags', require('./src/routes/tags'));
 app.use('/api/attachments', require('./src/routes/attachments'));
 app.use('/api/search', require('./src/routes/search'));
 app.use('/api/notifications', require('./src/routes/notifications').router);
+app.use('/api/fiscal-config', require('./src/routes/fiscal-config'));
+app.use('/api/invoices', require('./src/routes/invoices'));
 
 // Health check
 app.get('/api/health', (req, res) => {
