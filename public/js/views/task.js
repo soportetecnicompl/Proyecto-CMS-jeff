@@ -323,7 +323,9 @@ window.deleteTimeLog = async function(taskId, logId) {
 window.openEditTaskFull = async function(taskId) {
   const task = _taskData;
   let users = [];
-  try { users = await api.getCompanyUsers(task.company_id || 1); } catch {}
+  if (task.company_id) {
+    try { users = await api.getCompanyUsers(task.company_id); } catch {}
+  }
 
   createModal({
     id: 'modalEditTaskFull',
