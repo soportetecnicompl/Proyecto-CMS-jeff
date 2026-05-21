@@ -22,6 +22,8 @@ app.use('/api/tasks', require('./src/routes/tasks'));
 app.use('/api/comments', require('./src/routes/comments'));
 app.use('/api/users', require('./src/routes/users'));
 app.use('/api/automations', require('./src/routes/automations'));
+app.use('/api/tags', require('./src/routes/tags'));
+app.use('/api/attachments', require('./src/routes/attachments'));
 
 // Health check
 app.get('/api/health', (req, res) => {

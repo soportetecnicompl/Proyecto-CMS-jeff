@@ -21,15 +21,18 @@ router.get('/project/:projectId', (req, res) => {
     ORDER BY t.order_index ASC, t.created_at DESC
   `).all(req.params.projectId);
 
-  // Attach subtasks
+  // Attach subtasks and tags
   tasks.forEach(task => {
     task.subtasks = db.prepare(`
-      SELECT t.*,
-        u.name as assigned_name, u.avatar as assigned_avatar
-      FROM tasks t
-      LEFT JOIN users u ON u.id = t.assigned_to
-      WHERE t.parent_task_id = ?
-      ORDER BY t.order_index ASC
+      SELECT t.*, u.name as assigned_name, u.avatar as assigned_avatar
+      FROM tasks t LEFT JOIN users u ON u.id = t.assigned_to
+      WHERE t.parent_task_id = ? ORDER BY t.order_index ASC
+    `).all(task.id);
+
+    task.tags = db.prepare(`
+      SELECT tg.* FROM tags tg
+      JOIN task_tags tt ON tt.tag_id = tg.id
+      WHERE tt.task_id = ?
     `).all(task.id);
   });
 
@@ -66,6 +69,27 @@ router.get('/:id', (req, res) => {
     LEFT JOIN users u ON u.id = t.assigned_to
     WHERE t.parent_task_id = ?
     ORDER BY t.order_index ASC
+  `).all(req.params.id);
+
+  task.tags = db.prepare(`
+    SELECT t.* FROM tags t
+    JOIN task_tags tt ON tt.tag_id = t.id
+    WHERE tt.task_id = ? ORDER BY t.name ASC
+  `).all(req.params.id);
+
+  task.dependencies = db.prepare(`
+    SELECT t.id, t.title, t.status, t.priority
+    FROM tasks t
+    JOIN task_dependencies td ON td.depends_on_id = t.id
+    WHERE td.task_id = ?
+  `).all(req.params.id);
+
+  task.blocked_by_count = task.dependencies.filter(d => d.status !== 'completada').length;
+
+  task.attachments = db.prepare(`
+    SELECT a.*, u.name as user_name FROM attachments a
+    JOIN users u ON u.id = a.user_id
+    WHERE a.task_id = ? ORDER BY a.created_at DESC
   `).all(req.params.id);
 
   res.json(task);
@@ -224,6 +248,29 @@ router.delete('/:id/time-logs/:logId', (req, res) => {
   const total = db.prepare('SELECT SUM(hours) as total FROM time_logs WHERE task_id = ?').get(req.params.id);
   db.prepare('UPDATE tasks SET actual_hours = ? WHERE id = ?').run(total.total || 0, req.params.id);
 
+  res.json({ success: true });
+});
+
+router.get('/:id/dependencies', (req, res) => {
+  const deps = db.prepare(`
+    SELECT t.id, t.title, t.status, t.priority
+    FROM tasks t JOIN task_dependencies td ON td.depends_on_id = t.id
+    WHERE td.task_id = ?
+  `).all(req.params.id);
+  res.json(deps);
+});
+
+router.post('/:id/dependencies', (req, res) => {
+  const { depends_on_id } = req.body;
+  if (!depends_on_id) return res.status(400).json({ error: 'depends_on_id requerido' });
+  if (parseInt(depends_on_id) === parseInt(req.params.id)) return res.status(400).json({ error: 'Una tarea no puede depender de sí misma' });
+  db.prepare('INSERT OR IGNORE INTO task_dependencies (task_id, depends_on_id) VALUES (?, ?)').run(req.params.id, depends_on_id);
+  const dep = db.prepare('SELECT id, title, status, priority FROM tasks WHERE id = ?').get(depends_on_id);
+  res.status(201).json(dep);
+});
+
+router.delete('/:id/dependencies/:depId', (req, res) => {
+  db.prepare('DELETE FROM task_dependencies WHERE task_id = ? AND depends_on_id = ?').run(req.params.id, req.params.depId);
   res.json({ success: true });
 });
 

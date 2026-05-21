@@ -11,6 +11,11 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
+const uploadsDir = path.join(__dirname, '..', 'data', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 const db = new Database(DB_PATH);
 
 // Enable WAL mode for better concurrency
@@ -155,6 +160,42 @@ function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_comments_entity ON comments(entity_type, entity_id);
     CREATE INDEX IF NOT EXISTS idx_observations_project ON observations(project_id);
     CREATE INDEX IF NOT EXISTS idx_time_logs_task ON time_logs(task_id);
+
+    CREATE TABLE IF NOT EXISTS tags (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      color TEXT DEFAULT '#6366f1',
+      created_by INTEGER REFERENCES users(id),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(company_id, name)
+    );
+
+    CREATE TABLE IF NOT EXISTS task_tags (
+      task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+      tag_id INTEGER REFERENCES tags(id) ON DELETE CASCADE,
+      PRIMARY KEY (task_id, tag_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS task_dependencies (
+      task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+      depends_on_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+      PRIMARY KEY (task_id, depends_on_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS attachments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+      user_id INTEGER REFERENCES users(id),
+      filename TEXT NOT NULL,
+      original_name TEXT NOT NULL,
+      size INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_task_tags_task ON task_tags(task_id);
+    CREATE INDEX IF NOT EXISTS idx_task_deps_task ON task_dependencies(task_id);
+    CREATE INDEX IF NOT EXISTS idx_attachments_task ON attachments(task_id);
   `);
 
   // Create initial admin user if not exists
