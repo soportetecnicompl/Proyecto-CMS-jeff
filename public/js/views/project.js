@@ -293,31 +293,39 @@ function isDueDate(date, status) {
 
 function renderKanban() {
   const tasks = window._allTasks || [];
+  const canEdit = window._canEdit;
   const columns = [
-    { id: 'pendiente', label: 'Pendiente', color: '#6b7280' },
-    { id: 'en_progreso', label: 'En Progreso', color: '#3b82f6' },
-    { id: 'en_revision', label: 'En Revisión', color: '#f59e0b' },
-    { id: 'completada', label: 'Completada', color: '#10b981' },
-    { id: 'cancelada', label: 'Cancelada', color: '#ef4444' },
+    { id: 'pendiente',   label: 'Pendiente',   color: '#6b7280' },
+    { id: 'en_progreso', label: 'En Progreso',  color: '#3b82f6' },
+    { id: 'en_revision', label: 'En Revisión',  color: '#f59e0b' },
+    { id: 'completada',  label: 'Completada',   color: '#10b981' },
+    { id: 'cancelada',   label: 'Cancelada',    color: '#ef4444' },
   ];
 
   document.getElementById('kanbanBoard').innerHTML = columns.map(col => {
     const colTasks = tasks.filter(t => t.status === col.id);
     return `
-      <div class="kanban-column">
+      <div class="kanban-column" id="kcol-${col.id}"
+        ondragover="event.preventDefault(); document.getElementById('kcol-${col.id}').classList.add('drag-over')"
+        ondragleave="document.getElementById('kcol-${col.id}').classList.remove('drag-over')"
+        ondrop="onKanbanDrop(event, '${col.id}')">
         <div class="kanban-header" style="border-bottom-color:${col.color}">
           <span>${col.label}</span>
           <span class="kanban-count">${colTasks.length}</span>
         </div>
-        <div class="kanban-tasks">
+        <div class="kanban-tasks" id="ktasks-${col.id}">
           ${colTasks.map(t => `
-            <div class="kanban-task" onclick="App.navigate('tarea/${t.id}')">
+            <div class="kanban-task" draggable="${canEdit ? 'true' : 'false'}"
+              data-task-id="${t.id}"
+              ondragstart="onKanbanDragStart(event, ${t.id})"
+              ondragend="event.target.classList.remove('dragging')"
+              onclick="App.navigate('tarea/${t.id}')">
               <div class="kanban-task-title">${escHtml(t.title)}</div>
               <div class="kanban-task-meta">
                 <span class="${getPriorityClass(t.priority)} badge" style="font-size:11px">${priorityIcon(t.priority)}</span>
                 ${t.assigned_name ? `<span class="text-sm text-gray">👤 ${escHtml(t.assigned_name)}</span>` : ''}
               </div>
-              ${t.estimated_hours ? `<div class="text-xs text-gray mt-1">⏱️ ${t.estimated_hours}h</div>` : ''}
+              ${t.due_date ? `<div class="text-xs text-gray mt-1 ${isDueDate(t.due_date, t.status) ? 'text-danger' : ''}">📅 ${formatDate(t.due_date)}</div>` : ''}
             </div>
           `).join('') || `<div class="text-sm text-gray" style="padding:8px;text-align:center">Sin tareas</div>`}
         </div>
@@ -325,6 +333,32 @@ function renderKanban() {
     `;
   }).join('');
 }
+
+window.onKanbanDragStart = function(e, taskId) {
+  e.dataTransfer.setData('kanban_task_id', taskId);
+  setTimeout(() => e.target.classList.add('dragging'), 0);
+};
+
+window.onKanbanDrop = async function(e, newStatus) {
+  e.preventDefault();
+  document.querySelectorAll('.kanban-column').forEach(c => c.classList.remove('drag-over'));
+  const taskId = parseInt(e.dataTransfer.getData('kanban_task_id'));
+  if (!taskId) return;
+  const task = (window._allTasks || []).find(t => t.id === taskId);
+  if (!task || task.status === newStatus) return;
+
+  const prevStatus = task.status;
+  task.status = newStatus;
+  renderKanban();
+
+  try {
+    await api.updateTask(taskId, { status: newStatus });
+  } catch (err) {
+    task.status = prevStatus;
+    renderKanban();
+    toast('Error al mover tarea: ' + err.message, 'error');
+  }
+};
 
 function renderPlanning() {
   const allTasks = window._allTasks || [];

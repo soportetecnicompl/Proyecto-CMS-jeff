@@ -1204,3 +1204,9 @@ select.form-control { cursor: pointer; }
 .text-gray { color: var(--gray-500); } .text-muted { color: var(--gray-400); }
 .font-bold { font-weight: 700; } .font-semibold { font-weight: 600; }
 .w-full { width: 100%; }
+
+/* ── Kanban drag & drop ──────────────────────────────────────── */
+.kanban-task[draggable] { cursor: grab; }
+.kanban-task[draggable]:active { cursor: grabbing; }
+.kanban-task.dragging { opacity: 0.4; transform: scale(0.97); }
+.kanban-column.drag-over { background: var(--primary-light, #eff6ff); border: 2px dashed var(--primary); border-radius: 8px; }
