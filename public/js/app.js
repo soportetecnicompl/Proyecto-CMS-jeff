@@ -62,6 +62,9 @@ const App = {
       renderProject(parts[1]);
     } else if (parts[0] === 'tarea' && parts[1]) {
       renderTask(parts[1]);
+    } else if (parts[0] === 'factura' && parts[1]) {
+      if (this.user.role !== 'admin') { this.navigate(''); return; }
+      renderInvoiceDetail(parts[1]);
     } else if (hash === 'automatizaciones') {
       renderAutomations();
     } else if (hash === 'usuarios') {

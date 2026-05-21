@@ -516,6 +516,8 @@ window.updateInvoiceEstado = async function(invoiceId, estado) {
     form.append('estado', estado);
     await api.updateInvoice(invoiceId, form);
     toast('Estado actualizado', 'success');
+    const inv = await api.getInvoice(invoiceId);
+    renderInvoiceBody(inv);
   } catch (err) { toast(err.message, 'error'); }
 };
 
