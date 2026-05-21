@@ -292,7 +292,7 @@ function initDatabase() {
 initDatabase();
 
 function addColumnSafe(table, column, def) {
-  try { db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${def}`); } catch {}
+  try { db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${def}`); } catch(e) { if (!e.message.includes('duplicate column')) throw e; }
 }
 
 addColumnSafe('projects', 'contract_value', 'REAL');
