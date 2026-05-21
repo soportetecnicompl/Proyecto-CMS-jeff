@@ -289,7 +289,7 @@ function renderTaskList(tasks) {
           ${task.due_date ? `<span class="${isDueDate(task.due_date, task.status) ? 'text-danger' : ''}">📅 ${formatDate(task.due_date)}</span>` : ''}
           ${task.comment_count > 0 ? `<span>💬 ${task.comment_count}</span>` : ''}
           ${task.tags?.length ? task.tags.map(tag =>
-  `<span class="tag-chip" style="background:${tag.color}22;color:${tag.color}">${escHtml(tag.name)}</span>`
+  `<span class="tag-chip" style="background:${safeColor(tag.color)}22;color:${safeColor(tag.color)}">${escHtml(tag.name)}</span>`
 ).join('') : ''}
           ${task.subtasks?.length ? `<span>🔀 ${task.subtasks.filter(s=>s.status==='completada').length}/${task.subtasks.length} subtareas</span>` : ''}
         </div>

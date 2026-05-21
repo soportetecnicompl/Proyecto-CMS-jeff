@@ -25,13 +25,6 @@ router.post('/', (req, res, next) => {
   }
 });
 
-router.delete('/:id', (req, res) => {
-  const tag = db.prepare('SELECT * FROM tags WHERE id = ?').get(req.params.id);
-  if (!tag) return res.status(404).json({ error: 'Etiqueta no encontrada' });
-  db.prepare('DELETE FROM tags WHERE id = ?').run(req.params.id);
-  res.json({ success: true });
-});
-
 router.post('/task/:taskId', (req, res) => {
   const { tag_id } = req.body;
   if (!tag_id) return res.status(400).json({ error: 'tag_id requerido' });
@@ -41,6 +34,13 @@ router.post('/task/:taskId', (req, res) => {
 
 router.delete('/task/:taskId/:tagId', (req, res) => {
   db.prepare('DELETE FROM task_tags WHERE task_id = ? AND tag_id = ?').run(req.params.taskId, req.params.tagId);
+  res.json({ success: true });
+});
+
+router.delete('/:id', (req, res) => {
+  const tag = db.prepare('SELECT * FROM tags WHERE id = ?').get(req.params.id);
+  if (!tag) return res.status(404).json({ error: 'Etiqueta no encontrada' });
+  db.prepare('DELETE FROM tags WHERE id = ?').run(req.params.id);
   res.json({ success: true });
 });
 

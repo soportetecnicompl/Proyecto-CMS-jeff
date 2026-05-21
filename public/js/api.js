@@ -383,3 +383,7 @@ function paginate(items, page, perPage = 15) {
 
   return { items: slice, html };
 }
+
+function safeColor(c) {
+  return /^#[0-9a-fA-F]{3,6}$/.test(c) ? c : '#6366f1';
+}

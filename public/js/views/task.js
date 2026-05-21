@@ -640,10 +640,6 @@ window.submitSubtask = async function(parentTaskId) {
   }
 };
 
-function safeColor(c) {
-  return /^#[0-9a-fA-F]{3,6}$/.test(c) ? c : '#6366f1';
-}
-
 window.openTagManager = async function(taskId, companyId) {
   const [allTags] = await Promise.all([
     api.getTagsByCompany(companyId)
