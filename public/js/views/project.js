@@ -480,6 +480,10 @@ function renderPlanning() {
 async function renderMetrics(projectId) {
   const container = document.getElementById('metricsContent');
   if (!container) return;
+  ['chartStatus', 'chartPriority', 'chartHours'].forEach(id => {
+    const existing = Chart.getChart(id);
+    if (existing) existing.destroy();
+  });
   container.innerHTML = '<div class="loading-overlay" style="position:relative;height:200px"><div class="spinner"></div></div>';
 
   try {
