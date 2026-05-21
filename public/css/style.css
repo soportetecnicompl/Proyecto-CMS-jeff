@@ -1201,7 +1201,7 @@ select.form-control { cursor: pointer; }
 .flex { display: flex; } .flex-col { flex-direction: column; }
 .items-center { align-items: center; } .justify-between { justify-content: space-between; }
 .text-sm { font-size: 13px; } .text-xs { font-size: 11px; }
-.text-gray { color: var(--gray-500); } .text-muted { color: var(--gray-400); }
+.text-gray { color: var(--gray-500); } .text-muted { color: var(--gray-400); } .text-danger { color: var(--danger); }
 .font-bold { font-weight: 700; } .font-semibold { font-weight: 600; }
 .w-full { width: 100%; }
 
