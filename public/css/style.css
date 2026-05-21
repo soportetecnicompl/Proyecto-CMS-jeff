@@ -1288,3 +1288,45 @@ select.form-control { cursor: pointer; }
   .print-header { display:block !important; margin-bottom:16px; }
 }
 .print-header { display:none; }
+
+/* ── Modo oscuro ─────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --gray-50:  #1a1a2e;
+  --gray-100: #16213e;
+  --gray-200: #0f3460;
+  --gray-300: #1a1a4e;
+  --gray-400: #6b7280;
+  --gray-500: #9ca3af;
+  --gray-600: #d1d5db;
+  --gray-700: #e5e7eb;
+  --gray-800: #f3f4f6;
+  --gray-900: #f9fafb;
+  --white: #1e1e3f;
+  color-scheme: dark;
+}
+
+[data-theme="dark"] body { background: #0d0d1a; color: var(--gray-800); }
+[data-theme="dark"] .card { background: #1e1e3f; border: 1px solid #2a2a5a; }
+[data-theme="dark"] .page-header { background: #1e1e3f; border-color: #2a2a5a; }
+[data-theme="dark"] .sidebar { background: #0d0d1a; }
+[data-theme="dark"] .form-control { background: #2a2a4a; border-color: #3a3a6a; color: var(--gray-800); }
+[data-theme="dark"] .form-control:focus { background: #2a2a4a; }
+[data-theme="dark"] .task-item { border-color: #2a2a5a; }
+[data-theme="dark"] .task-item:hover { background: #2a2a4a; }
+[data-theme="dark"] .modal { background: #1e1e3f; border: 1px solid #2a2a5a; }
+[data-theme="dark"] .modal-overlay { background: rgba(0,0,0,.7); }
+[data-theme="dark"] .search-modal { background: #1e1e3f; }
+[data-theme="dark"] .search-input-wrap { border-color: #2a2a5a; }
+[data-theme="dark"] .search-input-wrap input { color: var(--gray-800); }
+[data-theme="dark"] .search-result-item:hover { background: #2a2a4a; }
+[data-theme="dark"] select { background: #2a2a4a; color: var(--gray-800); }
+[data-theme="dark"] .tabs { border-color: #2a2a5a; }
+[data-theme="dark"] .tab-btn { color: var(--gray-500); }
+[data-theme="dark"] .tab-btn.active { border-color: var(--primary); color: var(--primary); }
+[data-theme="dark"] .kanban-column { background: #1e1e3f; border-color: #2a2a5a; }
+[data-theme="dark"] .kanban-task { background: #2a2a4a; border-color: #3a3a6a; }
+[data-theme="dark"] .stat-card { background: #1e1e3f; }
+[data-theme="dark"] .company-card { background: #1e1e3f; }
+
+.dark-toggle { background:none; border:none; color:var(--gray-400); cursor:pointer; font-size:18px; padding:4px; border-radius:6px; transition:color .15s; }
+.dark-toggle:hover { color:white; }

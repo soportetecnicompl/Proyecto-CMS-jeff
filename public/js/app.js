@@ -2,6 +2,7 @@ const App = {
   user: null,
 
   async init() {
+    this.initTheme();
     const token = localStorage.getItem('cms_token');
 
     // Check for invitation token in URL
@@ -179,6 +180,27 @@ const App = {
   initMobileBar() {
     const bar = document.getElementById('mobileTopBar');
     if (bar) bar.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
+  },
+
+  initTheme() {
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  },
+
+  toggleDarkMode() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    }
+    document.querySelectorAll('.dark-toggle').forEach(btn => {
+      btn.textContent = isDark ? '🌙' : '☀️';
+      btn.title = isDark ? 'Activar modo oscuro' : 'Desactivar modo oscuro';
+    });
   },
 
   logout() {
@@ -439,6 +461,10 @@ function renderAppShell(activeSection, content) {
             <div class="name">${escHtml(u.name)}</div>
             <div class="role">${u.role === 'admin' ? '🔑 Admin' : '👤 Usuario'}</div>
           </div>
+          <button class="dark-toggle" onclick="App.toggleDarkMode()"
+            title="${document.documentElement.getAttribute('data-theme')==='dark' ? 'Desactivar modo oscuro' : 'Activar modo oscuro'}">
+            ${document.documentElement.getAttribute('data-theme')==='dark' ? '☀️' : '🌙'}
+          </button>
           <button class="btn-logout" onclick="App.logout()" title="Cerrar sesión">⏻</button>
         </div>
       </aside>
