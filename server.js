@@ -25,6 +25,7 @@ app.use('/api/automations', require('./src/routes/automations'));
 app.use('/api/tags', require('./src/routes/tags'));
 app.use('/api/attachments', require('./src/routes/attachments'));
 app.use('/api/search', require('./src/routes/search'));
+app.use('/api/notifications', require('./src/routes/notifications').router);
 
 // Health check
 app.get('/api/health', (req, res) => {

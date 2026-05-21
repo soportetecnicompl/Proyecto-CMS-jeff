@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../database');
 const { authMiddleware } = require('../middleware/auth');
 const { sendTaskNotification } = require('../services/email');
+const { createNotification } = require('./notifications');
 
 const router = express.Router();
 router.use(authMiddleware);
@@ -147,6 +148,13 @@ router.post('/', (req, res) => {
         taskId: task.id
       }).catch(err => console.error('Error enviando notificación:', err.message));
     }
+      createNotification(
+        assigned_to,
+        'task_assigned',
+        'Nueva tarea asignada',
+        `${req.user.name} te asignó: "${title}"`,
+        'task', task.id
+      );
   }
 
   // Auto-update project progress
@@ -197,6 +205,13 @@ router.put('/:id', (req, res) => {
         taskId: task.id
       }).catch(() => {});
     }
+      createNotification(
+        assigned_to,
+        'task_assigned',
+        'Tarea asignada',
+        `${req.user.name} te asignó: "${title || task.title}"`,
+        'task', task.id
+      );
   }
 
   updateProjectProgress(task.project_id);

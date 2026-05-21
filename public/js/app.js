@@ -21,6 +21,10 @@ const App = {
     try {
       api.setToken(token);
       this.user = await api.getMe();
+      this.initSSE();
+      api.getNotifications().then(({ unread }) => {
+        if (unread > 0) setTimeout(() => this._updateBadge(unread, true), 100);
+      }).catch(() => {});
       this.setupRouter();
       this.route();
     } catch {
@@ -186,6 +190,82 @@ const App = {
     if (localStorage.getItem('theme') === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
     }
+  },
+
+  initSSE() {
+    if (this._sseSource) { this._sseSource.close(); this._sseSource = null; }
+    const token = api._token;
+    if (!token) return;
+    this._sseSource = new EventSource(`/api/notifications/stream?token=${encodeURIComponent(token)}`);
+    this._sseSource.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'notification') {
+          this._updateBadge(1, false);
+          const n = data.notification;
+          toast((n.title || '') + (n.body ? ': ' + n.body : ''), 'info');
+        }
+      } catch {}
+    };
+    this._sseSource.onerror = () => {
+      if (this._sseSource) { this._sseSource.close(); this._sseSource = null; }
+      setTimeout(() => { if (this.user) this.initSSE(); }, 10000);
+    };
+  },
+
+  _updateBadge(delta, absolute) {
+    const badge = document.getElementById('notifBadge');
+    if (!badge) return;
+    const cur = parseInt(badge.textContent) || 0;
+    const next = absolute ? delta : cur + delta;
+    badge.textContent = next > 99 ? '99+' : next;
+    badge.style.display = next > 0 ? 'flex' : 'none';
+  },
+
+  async openNotifications() {
+    const existing = document.getElementById('notifDropdown');
+    if (existing) { existing.remove(); return; }
+    try {
+      const { notifications, unread } = await api.getNotifications();
+      const dropdown = document.createElement('div');
+      dropdown.id = 'notifDropdown';
+      dropdown.className = 'notif-dropdown';
+      dropdown.innerHTML = `
+        <div class="notif-dropdown-header">
+          🔔 Notificaciones
+          ${unread > 0 ? `<button class="btn btn-ghost btn-sm" onclick="App.markAllRead()">Marcar leídas</button>` : ''}
+        </div>
+        <div class="notif-list">
+          ${notifications.length ? notifications.map(n => `
+            <div class="notif-item${!n.read_at ? ' unread' : ''}"
+              onclick="App.clickNotif(${n.id}, '${n.entity_type || ''}', ${n.entity_id || 0})">
+              <div class="notif-item-title">${escHtml(n.title)}</div>
+              ${n.body ? `<div class="notif-item-body">${escHtml(n.body)}</div>` : ''}
+              <div class="notif-item-time">${timeAgo(n.created_at)}</div>
+            </div>
+          `).join('') : '<div class="notif-empty">Sin notificaciones</div>'}
+        </div>
+      `;
+      document.body.appendChild(dropdown);
+      setTimeout(() => document.addEventListener('click', function h(e) {
+        if (!dropdown.contains(e.target) && e.target.id !== 'notifBellBtn') {
+          dropdown.remove();
+          document.removeEventListener('click', h);
+        }
+      }), 10);
+    } catch (err) { toast(err.message, 'error'); }
+  },
+
+  async markAllRead() {
+    await api.markAllRead();
+    document.getElementById('notifDropdown')?.remove();
+    this._updateBadge(0, true);
+  },
+
+  async clickNotif(notifId, entityType, entityId) {
+    await api.markRead(notifId).catch(() => {});
+    document.getElementById('notifDropdown')?.remove();
+    if (entityType && entityId) this.navigate(`${entityType}/${entityId}`);
   },
 
   toggleDarkMode() {
@@ -461,6 +541,10 @@ function renderAppShell(activeSection, content) {
             <div class="name">${escHtml(u.name)}</div>
             <div class="role">${u.role === 'admin' ? '🔑 Admin' : '👤 Usuario'}</div>
           </div>
+          <button class="notif-bell" id="notifBellBtn" onclick="App.openNotifications()" title="Notificaciones">
+            🔔
+            <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+          </button>
           <button class="dark-toggle" onclick="App.toggleDarkMode()"
             title="${document.documentElement.getAttribute('data-theme')==='dark' ? 'Desactivar modo oscuro' : 'Activar modo oscuro'}">
             ${document.documentElement.getAttribute('data-theme')==='dark' ? '☀️' : '🌙'}

@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../database');
 const { authMiddleware } = require('../middleware/auth');
+const { createNotification } = require('./notifications');
 
 const router = express.Router();
 router.use(authMiddleware);
@@ -46,6 +47,20 @@ router.post('/:type/:id', (req, res) => {
     JOIN users u ON u.id = c.user_id
     WHERE c.id = ?
   `).get(result.lastInsertRowid);
+
+  // Notificar al asignado si es comentario en tarea
+  if (type === 'task') {
+    const task = db.prepare('SELECT assigned_to, title FROM tasks WHERE id = ?').get(id);
+    if (task && task.assigned_to && task.assigned_to !== req.user.id) {
+      createNotification(
+        task.assigned_to,
+        'comment',
+        'Nuevo comentario',
+        `${req.user.name} comentó en "${task.title}"`,
+        'task', id
+      );
+    }
+  }
 
   res.status(201).json(comment);
 });

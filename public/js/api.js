@@ -119,6 +119,11 @@ const api = {
 
   // Search
   search: (q) => api.get(`/search?q=${encodeURIComponent(q)}`),
+
+  // Notifications
+  getNotifications: () => api.get('/notifications'),
+  markAllRead: () => api.put('/notifications/read-all', {}),
+  markRead: (id) => api.put(`/notifications/${id}/read`, {}),
 };
 
 // Shared HTML escaping — defined once here, available globally
