@@ -48,6 +48,15 @@ router.get('/:id', (req, res) => {
     return res.status(403).json({ error: 'Sin acceso' });
   }
 
+  // Incluir el rol del usuario en esta empresa para que el frontend controle permisos
+  if (req.user.role === 'admin') {
+    project.my_company_role = 'admin';
+  } else {
+    const access = db.prepare('SELECT role FROM company_users WHERE company_id = ? AND user_id = ?')
+      .get(project.company_id, req.user.id);
+    project.my_company_role = access ? access.role : 'viewer';
+  }
+
   project.task_count = db.prepare('SELECT COUNT(*) as n FROM tasks WHERE project_id = ?').get(req.params.id).n;
   project.completed_tasks = db.prepare("SELECT COUNT(*) as n FROM tasks WHERE project_id = ? AND status = 'completada'").get(req.params.id).n;
 

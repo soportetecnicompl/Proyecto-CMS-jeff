@@ -41,11 +41,12 @@ async function renderProject(id) {
 }
 
 function renderProjectContent(project, tasks) {
-  const canEdit = App.user.role === 'admin';
+  // canEdit: admin global O miembro/admin de la empresa (no viewer)
+  const canEdit = App.user.role === 'admin' || ['admin', 'member'].includes(project.my_company_role);
 
   document.getElementById('projectHeaderActions').innerHTML = `
-    <button class="btn btn-primary btn-sm" onclick="openCreateTask(${project.id})">+ Tarea</button>
-    <button class="btn btn-secondary btn-sm" onclick="openEditProject(${project.id})">✏️ Editar</button>
+    ${canEdit ? `<button class="btn btn-primary btn-sm" onclick="openCreateTask(${project.id})">+ Tarea</button>` : ''}
+    ${canEdit ? `<button class="btn btn-secondary btn-sm" onclick="openEditProject(${project.id})">✏️ Editar</button>` : ''}
   `;
 
   const body = document.getElementById('projectBody');
@@ -207,6 +208,7 @@ function renderProjectContent(project, tasks) {
 
   // Task filter logic
   window._allTasks = tasks;
+  window._canEdit = canEdit;
   function applyTaskFilters() {
     const q = (document.getElementById('searchTasks').value || '').toLowerCase();
     const s = document.getElementById('filterTaskStatus').value;
@@ -224,18 +226,19 @@ function renderProjectContent(project, tasks) {
 }
 
 function renderTaskList(tasks) {
+  const canEdit = window._canEdit;
   if (!tasks.length) {
     return `<div class="empty-state">
       <div class="icon">📋</div>
       <h3>Sin tareas</h3>
-      <p>Crea la primera tarea para este proyecto.</p>
+      <p>${canEdit ? 'Crea la primera tarea para este proyecto.' : 'No hay tareas aún.'}</p>
     </div>`;
   }
 
   return tasks.map(task => `
     <div class="task-item" onclick="App.navigate('tarea/${task.id}')">
       <div class="task-checkbox ${task.status === 'completada' ? 'done' : ''}"
-        onclick="event.stopPropagation(); quickComplete(${task.id}, '${task.status}')">
+        onclick="event.stopPropagation(); ${canEdit ? `quickComplete(${task.id}, '${task.status}')` : ''}">
         ${task.status === 'completada' ? '✓' : ''}
       </div>
       <div class="task-item-body">
@@ -250,10 +253,11 @@ function renderTaskList(tasks) {
           ${task.subtasks?.length ? `<span>🔀 ${task.subtasks.length} subtareas</span>` : ''}
         </div>
       </div>
+      ${canEdit ? `
       <div class="task-item-actions" onclick="event.stopPropagation()">
         <button class="btn btn-ghost btn-sm" onclick="openEditTask(${task.id})">✏️</button>
         <button class="btn btn-ghost btn-sm" title="Eliminar" onclick="deleteTask(${task.id})">🗑️</button>
-      </div>
+      </div>` : ''}
     </div>
   `).join('');
 }
