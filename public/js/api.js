@@ -263,3 +263,95 @@ function confirm(msg, cb, opts = {}) {
   // Focus the ok button for keyboard accessibility
   setTimeout(() => document.getElementById('_confirmOkBtn')?.focus(), 50);
 }
+
+// ── Soft delete with undo ────────────────────────────────────────────────────
+// Removes item from UI immediately, shows 5-second undo window, then deletes.
+function softDelete({ label, onDelete, onUndo, delay = 5000 }) {
+  const existing = document.getElementById('_undoToast');
+  if (existing) {
+    clearTimeout(existing._timer);
+    existing.remove();
+  }
+
+  const t = document.createElement('div');
+  t.id = '_undoToast';
+  t.style.cssText = `
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:var(--gray-800); color:white; border-radius:10px;
+    padding:12px 16px; display:flex; align-items:center; gap:14px;
+    min-width:280px; max-width:420px; z-index:2000;
+    box-shadow:0 8px 24px rgba(0,0,0,.35);
+    animation:slideUp .2s ease;
+  `;
+  t.innerHTML = `
+    <span style="flex:1;font-size:14px">🗑️ "${escHtml(label)}" eliminado</span>
+    <button id="_undoBtn" style="background:rgba(255,255,255,.15);border:none;color:white;
+      padding:5px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;
+      white-space:nowrap;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.25)'"
+      onmouseout="this.style.background='rgba(255,255,255,.15)'">↩ Deshacer</button>
+    <div style="position:absolute;bottom:0;left:0;height:3px;background:var(--primary);
+      border-radius:0 0 10px 10px;width:100%;
+      transition:width ${delay}ms linear" id="_undoBar"></div>
+  `;
+
+  document.body.appendChild(t);
+  setTimeout(() => { const b = document.getElementById('_undoBar'); if (b) b.style.width = '0'; }, 30);
+
+  let cancelled = false;
+  t._timer = setTimeout(() => {
+    if (!cancelled && t.parentNode) { t.remove(); onDelete(); }
+  }, delay);
+
+  document.getElementById('_undoBtn').addEventListener('click', () => {
+    cancelled = true;
+    clearTimeout(t._timer);
+    t.remove();
+    onUndo();
+    toast('Eliminación cancelada', 'success');
+  });
+}
+
+// ── Pagination helper ────────────────────────────────────────────────────────
+// Returns { items, html } where html is the pagination controls HTML.
+function paginate(items, page, perPage = 15) {
+  const total  = items.length;
+  const pages  = Math.ceil(total / perPage);
+  const p      = Math.max(1, Math.min(page, pages));
+  const start  = (p - 1) * perPage;
+  const slice  = items.slice(start, start + perPage);
+
+  if (pages <= 1) return { items: slice, html: '' };
+
+  const from = start + 1;
+  const to   = Math.min(start + perPage, total);
+
+  // Build page numbers — show max 7
+  const nums = [];
+  if (pages <= 7) {
+    for (let i = 1; i <= pages; i++) nums.push(i);
+  } else {
+    nums.push(1);
+    if (p > 3) nums.push('…');
+    for (let i = Math.max(2, p-1); i <= Math.min(pages-1, p+1); i++) nums.push(i);
+    if (p < pages - 2) nums.push('…');
+    nums.push(pages);
+  }
+
+  const btn = (n, label, disabled, active) =>
+    `<button class="page-btn${active?' active':''}" ${disabled?'disabled':''} onclick="_goPage(${n})">${label}</button>`;
+
+  const html = `
+    <div class="pagination">
+      <span class="page-info">Mostrando ${from}–${to} de ${total}</span>
+      <div class="page-btns">
+        ${btn(p-1, '‹', p===1, false)}
+        ${nums.map(n => n === '…'
+          ? `<span class="page-ellipsis">…</span>`
+          : btn(n, n, false, n===p)
+        ).join('')}
+        ${btn(p+1, '›', p===pages, false)}
+      </div>
+    </div>`;
+
+  return { items: slice, html };
+}

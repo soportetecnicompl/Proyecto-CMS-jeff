@@ -1,4 +1,9 @@
+let _companiesPage = 1;
+const _companiesPerPage = 12;
+window._goPage = window._goPage || function(p) { _companiesPage = p; renderCompanies(window._allCompanies || []); };
+
 async function renderDashboard() {
+  _companiesPage = 1;
   const app = document.getElementById('app');
   app.innerHTML = renderAppShell('dashboard', `
     <div class="page-header">
@@ -23,14 +28,17 @@ async function renderDashboard() {
 
   try {
     const companies = await api.getCompanies();
+    window._allCompanies = companies;
     renderStats(companies);
     renderCompanies(companies);
 
     document.getElementById('searchCompanies').addEventListener('input', e => {
       const q = e.target.value.toLowerCase();
+      _companiesPage = 1;
       const filtered = companies.filter(c =>
         c.name.toLowerCase().includes(q) || (c.description || '').toLowerCase().includes(q)
       );
+      window._allCompanies = filtered;
       renderCompanies(filtered);
     });
   } catch (err) {
@@ -88,7 +96,9 @@ function renderCompanies(companies) {
     return;
   }
 
-  grid.innerHTML = companies.map(c => `
+  const { items, html: paginationHtml } = paginate(companies, _companiesPage, _companiesPerPage);
+
+  grid.innerHTML = items.map(c => `
     <div class="company-card" onclick="App.navigate('empresa/${c.id}')">
       <div class="company-card-header" style="background:${c.color}"></div>
       <div class="company-card-body">
@@ -104,7 +114,7 @@ function renderCompanies(companies) {
         <span>👥 ${c.member_count || 0} miembros</span>
       </div>
     </div>
-  `).join('');
+  `).join('') + (paginationHtml ? `<div style="grid-column:1/-1">${paginationHtml}</div>` : '');
 }
 
 function roleLabel(r) {

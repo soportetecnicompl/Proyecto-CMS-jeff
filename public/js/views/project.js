@@ -1,5 +1,32 @@
 let _projectData = null;
 let _projectUsers = [];
+let _tasksPage = 1;
+const _tasksPerPage = 15;
+
+// Global page-change handler for task pagination
+window._goPage = function(page) {
+  _tasksPage = page;
+  const filtered = getFilteredTasks();
+  renderTaskPage(filtered);
+};
+
+function getFilteredTasks() {
+  const q = (document.getElementById('searchTasks')?.value || '').toLowerCase();
+  const s = document.getElementById('filterTaskStatus')?.value || '';
+  const p = document.getElementById('filterTaskPriority')?.value || '';
+  return (window._allTasks || []).filter(t =>
+    (!q || t.title.toLowerCase().includes(q) || (t.description||'').toLowerCase().includes(q)) &&
+    (!s || t.status === s) &&
+    (!p || t.priority === p)
+  );
+}
+
+function renderTaskPage(filtered) {
+  _tasksPage = Math.max(1, Math.min(_tasksPage, Math.ceil(filtered.length / _tasksPerPage) || 1));
+  const { items, html } = paginate(filtered, _tasksPage, _tasksPerPage);
+  const container = document.getElementById('tasksList');
+  if (container) container.innerHTML = renderTaskList(items) + html;
+}
 
 async function renderProject(id) {
   const app = document.getElementById('app');
@@ -151,9 +178,7 @@ function renderProjectContent(project, tasks) {
         </div>
         <button class="btn btn-primary btn-sm" onclick="openCreateTask(${project.id})">+ Nueva Tarea</button>
       </div>
-      <div id="tasksList">
-        ${renderTaskList(tasks)}
-      </div>
+      <div id="tasksList"></div>
     </div>
 
     <!-- Kanban tab -->
@@ -212,16 +237,12 @@ function renderProjectContent(project, tasks) {
   // Task filter logic
   window._allTasks = tasks;
   window._canEdit = canEdit;
+  _tasksPage = 1;
+  renderTaskPage(tasks);
+
   function applyTaskFilters() {
-    const q = (document.getElementById('searchTasks').value || '').toLowerCase();
-    const s = document.getElementById('filterTaskStatus').value;
-    const p = document.getElementById('filterTaskPriority').value;
-    const filtered = window._allTasks.filter(t =>
-      (!q || t.title.toLowerCase().includes(q) || (t.description||'').toLowerCase().includes(q)) &&
-      (!s || t.status === s) &&
-      (!p || t.priority === p)
-    );
-    document.getElementById('tasksList').innerHTML = renderTaskList(filtered);
+    _tasksPage = 1;
+    renderTaskPage(getFilteredTasks());
   }
   document.getElementById('searchTasks').addEventListener('input', applyTaskFilters);
   document.getElementById('filterTaskStatus').addEventListener('change', applyTaskFilters);
@@ -539,13 +560,31 @@ window.quickComplete = async function(taskId, currentStatus) {
 };
 
 window.deleteTask = function(taskId) {
-  confirm('¿Eliminar esta tarea? Se perderán sus registros y comentarios.', async () => {
-    try {
-      await api.deleteTask(taskId);
-      window._allTasks = window._allTasks.filter(t => t.id !== taskId);
-      document.getElementById('tasksList').innerHTML = renderTaskList(window._allTasks);
-      toast('Tarea eliminada', 'success');
-    } catch (err) { toast(err.message, 'error'); }
+  const task = (window._allTasks || []).find(t => t.id === taskId);
+  if (!task) return;
+
+  // Remove from UI immediately (optimistic)
+  window._allTasks = window._allTasks.filter(t => t.id !== taskId);
+  renderTaskPage(getFilteredTasks());
+
+  softDelete({
+    label: task.title,
+    delay: 5000,
+    onDelete: async () => {
+      try {
+        await api.deleteTask(taskId);
+      } catch (err) {
+        // If delete fails, restore
+        window._allTasks.push(task);
+        renderTaskPage(getFilteredTasks());
+        toast('Error al eliminar: ' + err.message, 'error');
+      }
+    },
+    onUndo: () => {
+      window._allTasks.push(task);
+      window._allTasks.sort((a, b) => a.id - b.id);
+      renderTaskPage(getFilteredTasks());
+    }
   });
 };
 

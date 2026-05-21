@@ -250,13 +250,26 @@ window.updateTaskStatus = async function(taskId, status) {
 };
 
 window.deleteTaskFromDetail = function(taskId) {
-  confirm('¿Eliminar esta tarea? Se perderán sus registros y comentarios.', async () => {
-    try {
-      const projectId = _taskData.project_id;
-      await api.deleteTask(taskId);
-      toast('Tarea eliminada', 'success');
-      App.navigate(`proyecto/${projectId}`);
-    } catch (err) { toast(err.message, 'error'); }
+  const projectId = _taskData.project_id;
+  const title = _taskData.title || 'Tarea';
+
+  // Navigate back immediately — soft delete handles the actual API call
+  App.navigate(`proyecto/${projectId}`);
+
+  softDelete({
+    label: title,
+    delay: 5000,
+    onDelete: async () => {
+      try {
+        await api.deleteTask(taskId);
+      } catch (err) {
+        toast('Error al eliminar la tarea: ' + err.message, 'error');
+      }
+    },
+    onUndo: () => {
+      // Navigate back to task if undo
+      App.navigate(`tarea/${taskId}`);
+    }
   });
 };
 

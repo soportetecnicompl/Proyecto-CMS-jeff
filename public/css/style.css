@@ -1131,6 +1131,66 @@ select.form-control { cursor: pointer; }
 }
 @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
 
+/* ===== PAGINATION ===== */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 4px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.page-info {
+  font-size: 13px;
+  color: var(--gray-500);
+}
+.page-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.page-btn {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--gray-200);
+  background: white;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--gray-700);
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.page-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(99,102,241,.05);
+}
+.page-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.page-btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+.page-ellipsis {
+  font-size: 13px;
+  color: var(--gray-400);
+  padding: 0 4px;
+}
+
+/* Slide-up animation for undo toast */
+@keyframes slideUp {
+  from { opacity:0; transform:translateX(-50%) translateY(16px); }
+  to   { opacity:1; transform:translateX(-50%) translateY(0); }
+}
+
 /* ===== UTILS ===== */
 .hidden { display: none !important; }
 .mt-1 { margin-top: 4px; } .mt-2 { margin-top: 8px; } .mt-3 { margin-top: 12px; }
