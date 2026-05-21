@@ -67,7 +67,7 @@ const App = {
   },
 
   logout() {
-    confirm('¿Cerrar sesión?', () => {
+    confirm('¿Estás seguro que quieres cerrar sesión?', () => {
       api.clearToken();
       this.user = null;
       this.renderLogin();

@@ -1052,6 +1052,53 @@ select.form-control { cursor: pointer; }
   .kanban-column { min-width: auto; max-width: 100%; }
 }
 
+/* ===== CONFIRM MODAL ===== */
+#_confirmModal .modal {
+  animation: modalIn .18s ease;
+}
+#_confirmModal .modal-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+}
+#_confirmModal .modal-body p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--gray-600);
+}
+#_confirmModal .modal-footer {
+  gap: 10px;
+}
+#_confirmModal .modal-footer .btn-secondary {
+  flex: 1;
+}
+#_confirmModal .modal-footer .btn-danger,
+#_confirmModal .modal-footer .btn-primary {
+  flex: 1.5;
+}
+
+/* ===== BUTTON LOADING STATE ===== */
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+}
+.btn-primary.btn-loading::after {
+  border-color: rgba(0,0,0,.2);
+  border-top-color: rgba(0,0,0,.6);
+}
+@keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
 /* ===== UTILS ===== */
 .hidden { display: none !important; }
 .mt-1 { margin-top: 4px; } .mt-2 { margin-top: 8px; } .mt-3 { margin-top: 12px; }

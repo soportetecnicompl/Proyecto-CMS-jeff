@@ -181,6 +181,21 @@ function hideModal(id) {
   if (m) m.style.display = 'none';
 }
 
+// Loading state helper for buttons
+async function withLoading(btnEl, asyncFn) {
+  if (!btnEl) return asyncFn();
+  const originalText = btnEl.innerHTML;
+  btnEl.classList.add('btn-loading');
+  btnEl.disabled = true;
+  try {
+    await asyncFn();
+  } finally {
+    btnEl.classList.remove('btn-loading');
+    btnEl.disabled = false;
+    btnEl.innerHTML = originalText;
+  }
+}
+
 function createModal({ id, title, body, footer, size = '' }) {
   const existing = document.getElementById(id);
   if (existing) existing.remove();
@@ -204,7 +219,47 @@ function createModal({ id, title, body, footer, size = '' }) {
   return modal;
 }
 
-function confirm(msg, cb) {
-  if (!window.confirm(msg)) return;
-  cb();
+function confirm(msg, cb, opts = {}) {
+  const existing = document.getElementById('_confirmModal');
+  if (existing) existing.remove();
+
+  const danger  = opts.danger  !== false;
+  const title   = opts.title   || (danger ? '⚠️ Confirmar acción' : 'Confirmar');
+  const label   = opts.label   || 'Confirmar';
+  const detail  = opts.detail  || '';
+
+  const overlay = document.createElement('div');
+  overlay.id = '_confirmModal';
+  overlay.className = 'modal-overlay';
+  overlay.style.cssText = 'display:flex;z-index:1100';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <h3 style="font-size:16px">${title}</h3>
+        <button class="modal-close" onclick="document.getElementById('_confirmModal').remove()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--gray-600);line-height:1.6;margin:0">${msg}</p>
+        ${detail ? `<p class="text-sm text-gray mt-2">${detail}</p>` : ''}
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="document.getElementById('_confirmModal').remove()">
+          Cancelar
+        </button>
+        <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" id="_confirmOkBtn">
+          ${label}
+        </button>
+      </div>
+    </div>`;
+
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+
+  document.getElementById('_confirmOkBtn').addEventListener('click', () => {
+    overlay.remove();
+    cb();
+  });
+
+  // Focus the ok button for keyboard accessibility
+  setTimeout(() => document.getElementById('_confirmOkBtn')?.focus(), 50);
 }

@@ -233,7 +233,7 @@ window.submitTaskComment = async function(taskId) {
 };
 
 window.deleteTaskComment = async function(commentId, taskId) {
-  confirm('¿Eliminar comentario?', async () => {
+  confirm('¿Eliminar este comentario?', async () => {
     try {
       await api.deleteComment(commentId);
       loadTaskComments(taskId);
@@ -250,7 +250,7 @@ window.updateTaskStatus = async function(taskId, status) {
 };
 
 window.deleteTaskFromDetail = function(taskId) {
-  confirm('¿Eliminar esta tarea?', async () => {
+  confirm('¿Eliminar esta tarea? Se perderán sus registros y comentarios.', async () => {
     try {
       const projectId = _taskData.project_id;
       await api.deleteTask(taskId);

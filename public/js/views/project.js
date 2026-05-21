@@ -457,7 +457,7 @@ window.submitObservation = async function(projectId) {
 };
 
 window.deleteObs = async function(projectId, obsId) {
-  confirm('¿Eliminar observación?', async () => {
+  confirm('¿Eliminar esta observación? No se puede deshacer.', async () => {
     try {
       await api.deleteObservation(projectId, obsId);
       loadObservations(projectId);
@@ -467,7 +467,7 @@ window.deleteObs = async function(projectId, obsId) {
 };
 
 window.deleteCommentItem = async function(commentId, containerId, type, entityId) {
-  confirm('¿Eliminar comentario?', async () => {
+  confirm('¿Eliminar este comentario?', async () => {
     try {
       await api.deleteComment(commentId);
       const comments = await api.getComments(type, entityId);
@@ -507,7 +507,7 @@ window.quickComplete = async function(taskId, currentStatus) {
 };
 
 window.deleteTask = function(taskId) {
-  confirm('¿Eliminar esta tarea?', async () => {
+  confirm('¿Eliminar esta tarea? Se perderán sus registros y comentarios.', async () => {
     try {
       await api.deleteTask(taskId);
       window._allTasks = window._allTasks.filter(t => t.id !== taskId);
@@ -782,7 +782,7 @@ window.submitEditProject = async function(id) {
 };
 
 window.deleteProject = function(id) {
-  confirm('¿Eliminar este proyecto? Se eliminarán todas sus tareas.', async () => {
+  confirm('Se eliminarán permanentemente todas las tareas, comentarios y datos de este proyecto.', async () => {
     try {
       const companyId = _projectData.company_id;
       await api.deleteProject(id);
