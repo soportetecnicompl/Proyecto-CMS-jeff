@@ -147,6 +147,7 @@ function renderProjectContent(project, tasks) {
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('tabTasks', this)">📋 Tareas (${totalTasks})</button>
       <button class="tab-btn" onclick="switchTab('tabKanban', this); renderKanban()">📌 Kanban</button>
+      <button class="tab-btn" onclick="switchTab('tabCalendar', this); renderCalendar()">🗓️ Calendario</button>
       <button class="tab-btn" onclick="switchTab('tabPlanning', this); renderPlanning()">📅 Planificación</button>
       <button class="tab-btn" onclick="switchTab('tabComments', this); loadProjectComments(${project.id})">💬 Comentarios</button>
       <button class="tab-btn" onclick="switchTab('tabObservations', this); loadObservations(${project.id})">📝 Observaciones</button>
@@ -184,6 +185,11 @@ function renderProjectContent(project, tasks) {
     <!-- Kanban tab -->
     <div class="tab-pane" id="tabKanban">
       <div id="kanbanBoard" class="kanban-board"></div>
+    </div>
+
+    <!-- Calendar tab -->
+    <div class="tab-pane" id="tabCalendar">
+      <div id="calendarContent"></div>
     </div>
 
     <!-- Planning tab -->
@@ -462,6 +468,83 @@ function renderPlanning() {
     </div>
   `;
 }
+
+function renderCalendar() {
+  const tasks = window._allTasks || [];
+  const now = new Date();
+  if (window._calYear === undefined) window._calYear = now.getFullYear();
+  if (window._calMonth === undefined) window._calMonth = now.getMonth();
+  const year = window._calYear;
+  const month = window._calMonth;
+
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startDow = firstDay.getDay();
+
+  const monthTasks = tasks.filter(t => {
+    if (!t.due_date) return false;
+    const d = new Date(t.due_date + 'T00:00:00');
+    return d.getFullYear() === year && d.getMonth() === month;
+  });
+
+  const tasksByDay = {};
+  monthTasks.forEach(t => {
+    const day = new Date(t.due_date + 'T00:00:00').getDate();
+    if (!tasksByDay[day]) tasksByDay[day] = [];
+    tasksByDay[day].push(t);
+  });
+
+  const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const totalCells = Math.ceil((startDow + daysInMonth) / 7) * 7;
+  const todayStr = new Date().toDateString();
+
+  let cells = '';
+  for (let i = 0; i < totalCells; i++) {
+    const day = i - startDow + 1;
+    const valid = day >= 1 && day <= daysInMonth;
+    const isToday = valid && new Date(year, month, day).toDateString() === todayStr;
+    const dayTasks = valid ? (tasksByDay[day] || []) : [];
+
+    cells += `<div class="cal-cell${!valid ? ' cal-cell-empty' : ''}${isToday ? ' cal-cell-today' : ''}">
+      ${valid ? `<div class="cal-day-num${isToday ? ' today' : ''}">${day}</div>` : ''}
+      ${dayTasks.slice(0, 3).map(t => `
+        <div class="cal-task priority-${t.priority}" onclick="event.stopPropagation();App.navigate('tarea/${t.id}')"
+          title="${escHtml(t.title)} — ${statusLabel(t.status)}">
+          ${priorityIcon(t.priority)} ${escHtml(t.title.length > 14 ? t.title.slice(0,14)+'…' : t.title)}
+        </div>
+      `).join('')}
+      ${dayTasks.length > 3 ? `<div class="cal-task-more">+${dayTasks.length - 3} más</div>` : ''}
+    </div>`;
+  }
+
+  document.getElementById('calendarContent').innerHTML = `
+    <div class="card">
+      <div class="card-body">
+        <div class="cal-nav">
+          <button class="btn btn-ghost btn-sm" onclick="navCalendar(-1)">‹ Anterior</button>
+          <h3>${monthNames[month]} ${year}</h3>
+          <button class="btn btn-ghost btn-sm" onclick="navCalendar(1)">Siguiente ›</button>
+        </div>
+        <div class="cal-grid">
+          ${dayNames.map(d => `<div class="cal-header-cell">${d}</div>`).join('')}
+          ${cells}
+        </div>
+        ${monthTasks.length === 0 ? `<p class="text-sm text-gray mt-4 text-center">No hay tareas con fecha de vencimiento en ${monthNames[month]}.</p>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+window.navCalendar = function(dir) {
+  let m = window._calMonth + dir;
+  let y = window._calYear;
+  if (m < 0) { m = 11; y--; }
+  if (m > 11) { m = 0; y++; }
+  window._calMonth = m;
+  window._calYear = y;
+  renderCalendar();
+};
 
 async function loadProjectComments(projectId) {
   try {
@@ -903,6 +986,7 @@ window.openCreateTask = openCreateTask;
 window.openEditProject = openEditProject;
 window.switchTab = switchTab;
 window.renderKanban = renderKanban;
+window.renderCalendar = renderCalendar;
 window.renderPlanning = renderPlanning;
 window.loadProjectComments = loadProjectComments;
 window.loadObservations = loadObservations;
