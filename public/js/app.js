@@ -198,7 +198,7 @@ const App = {
       localStorage.setItem('theme', 'dark');
     }
     document.querySelectorAll('.dark-toggle').forEach(btn => {
-      btn.textContent = isDark ? '🌙' : '☀️';
+      btn.textContent = isDark ? '☀️' : '🌙';
       btn.title = isDark ? 'Activar modo oscuro' : 'Desactivar modo oscuro';
     });
   },
