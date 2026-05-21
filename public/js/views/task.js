@@ -31,6 +31,7 @@ async function renderTask(id) {
     renderTaskContent(task);
     loadTaskComments(id);
     loadTaskAttachments(id);
+    loadTaskActivity(id);
   } catch (err) {
     toast(err.message, 'error');
   }
@@ -225,6 +226,14 @@ function renderTaskContent(task) {
             <div id="attachmentsList" class="mt-3">
               ${renderAttachmentsList(task.attachments || [], task.id)}
             </div>
+          </div>
+        </div>
+
+        <!-- Activity log -->
+        <div class="card mt-4">
+          <div class="card-header"><span class="card-title">📜 Historial</span></div>
+          <div class="card-body" id="taskActivityLog">
+            <p class="text-sm text-gray">Cargando...</p>
           </div>
         </div>
       </div>
@@ -752,6 +761,23 @@ window.createTagAndAssign = async function(taskId, companyId) {
 };
 
 window.openLogTime = openLogTime;
+
+async function loadTaskActivity(taskId) {
+  try {
+    const logs = await api.getTaskActivity(taskId);
+    const container = document.getElementById('taskActivityLog');
+    if (!container) return;
+    container.innerHTML = logs.length ? logs.map(l => `
+      <div class="activity-log-item">
+        <div class="activity-log-dot"></div>
+        <div class="activity-log-body">
+          <div class="activity-log-desc">${escHtml(l.description || l.action)}</div>
+          <div class="activity-log-meta">${escHtml(l.user_name || 'Sistema')} · ${timeAgo(l.created_at)}</div>
+        </div>
+      </div>
+    `).join('') : '<p class="text-sm text-gray">Sin actividad registrada.</p>';
+  } catch { /* silencioso */ }
+}
 
 function getPriorityClass(p) {
   return { baja: 'badge-green', media: 'badge-yellow', alta: 'badge-red', critica: 'badge-red' }[p] || 'badge-gray';

@@ -65,6 +65,7 @@ const api = {
   deleteTask: (id) => api.delete(`/tasks/${id}`),
   addTimeLog: (taskId, data) => api.post(`/tasks/${taskId}/time-logs`, data),
   deleteTimeLog: (taskId, logId) => api.delete(`/tasks/${taskId}/time-logs/${logId}`),
+  getTaskActivity: (taskId) => api.get(`/tasks/${taskId}/activity`),
 
   // Comments
   getComments: (type, id) => api.get(`/comments/${type}/${id}`),

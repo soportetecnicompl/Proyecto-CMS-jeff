@@ -161,6 +161,7 @@ function renderProjectContent(project, tasks) {
       <button class="tab-btn" onclick="switchTab('tabCalendar', this); renderCalendar()">🗓️ Calendario</button>
       <button class="tab-btn" onclick="switchTab('tabPlanning', this); renderPlanning()">📅 Planificación</button>
       <button class="tab-btn" onclick="switchTab('tabMetrics', this); renderMetrics(${project.id})">📊 Métricas</button>
+      <button class="tab-btn" onclick="switchTab('tabHistory', this); loadProjectHistory(${project.id})">📜 Historial</button>
       <button class="tab-btn" onclick="switchTab('tabComments', this); loadProjectComments(${project.id})">💬 Comentarios</button>
       <button class="tab-btn" onclick="switchTab('tabObservations', this); loadObservations(${project.id})">📝 Observaciones</button>
     </div>
@@ -212,6 +213,11 @@ function renderProjectContent(project, tasks) {
     <!-- Metrics tab -->
     <div class="tab-pane" id="tabMetrics">
       <div id="metricsContent"></div>
+    </div>
+
+    <!-- History tab -->
+    <div class="tab-pane" id="tabHistory">
+      <div id="projectHistoryContent"><div class="loading-overlay" style="position:relative;height:100px"><div class="spinner"></div></div></div>
     </div>
 
     <!-- Comments tab -->
@@ -1186,6 +1192,38 @@ window.renderPlanning = renderPlanning;
 window.renderMetrics = renderMetrics;
 window.loadProjectComments = loadProjectComments;
 window.loadObservations = loadObservations;
+
+async function loadProjectHistory(projectId) {
+  const container = document.getElementById('projectHistoryContent');
+  if (!container) return;
+  try {
+    const tasks = window._allTasks || [];
+    const taskIds = tasks.map(t => t.id);
+    if (!taskIds.length) {
+      container.innerHTML = '<div class="empty-state"><div class="icon">📜</div><h3>Sin actividad</h3></div>';
+      return;
+    }
+    const logs = await Promise.all(taskIds.slice(0, 20).map(id => api.getTaskActivity(id)));
+    const all = logs.flat().sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
+    container.innerHTML = all.length ? `
+      <div class="card">
+        <div class="card-body">
+          ${all.map(l => `
+            <div class="activity-log-item">
+              <div class="activity-log-dot"></div>
+              <div class="activity-log-body">
+                <div class="activity-log-desc">${escHtml(l.description || l.action)}</div>
+                <div class="activity-log-meta">${escHtml(l.user_name || 'Sistema')} · ${timeAgo(l.created_at)}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : '<div class="empty-state"><div class="icon">📜</div><h3>Sin actividad registrada</h3></div>';
+  } catch (err) { container.innerHTML = `<p class="text-danger text-sm">${escHtml(err.message)}</p>`; }
+}
+
+window.loadProjectHistory = loadProjectHistory;
 
 function getPriorityClass(p) {
   return { baja: 'badge-green', media: 'badge-yellow', alta: 'badge-red', critica: 'badge-red' }[p] || 'badge-gray';

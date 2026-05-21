@@ -196,6 +196,18 @@ function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_task_tags_task ON task_tags(task_id);
     CREATE INDEX IF NOT EXISTS idx_task_deps_task ON task_dependencies(task_id);
     CREATE INDEX IF NOT EXISTS idx_attachments_task ON attachments(task_id);
+
+    CREATE TABLE IF NOT EXISTS activity_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_type TEXT NOT NULL,
+      entity_id INTEGER NOT NULL,
+      user_id INTEGER REFERENCES users(id),
+      action TEXT NOT NULL,
+      description TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_activity_entity ON activity_log(entity_type, entity_id);
   `);
 
   // Create initial admin user if not exists

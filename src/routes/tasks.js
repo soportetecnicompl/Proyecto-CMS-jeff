@@ -6,6 +6,13 @@ const { sendTaskNotification } = require('../services/email');
 const router = express.Router();
 router.use(authMiddleware);
 
+function logActivity(entityType, entityId, userId, action, description) {
+  db.prepare(`
+    INSERT INTO activity_log (entity_type, entity_id, user_id, action, description)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(entityType, entityId, userId, action, description);
+}
+
 // Get tasks for a project
 router.get('/project/:projectId', (req, res) => {
   const tasks = db.prepare(`
@@ -144,6 +151,7 @@ router.post('/', (req, res) => {
 
   // Auto-update project progress
   updateProjectProgress(project_id);
+  logActivity('task', result.lastInsertRowid, req.user.id, 'created', `Tarea creada: "${title}"`);
 
   res.status(201).json(task);
 });
@@ -193,6 +201,17 @@ router.put('/:id', (req, res) => {
 
   updateProjectProgress(task.project_id);
 
+  const changes = [];
+  if (status !== undefined && status !== task.status) changes.push(`Estado: ${task.status} → ${status}`);
+  if (assigned_to !== undefined && assigned_to !== task.assigned_to) {
+    const newUser = assigned_to ? db.prepare('SELECT name FROM users WHERE id = ?').get(assigned_to) : null;
+    changes.push(`Asignado a: ${newUser ? newUser.name : 'nadie'}`);
+  }
+  if (title !== undefined && title !== task.title) changes.push(`Título actualizado`);
+  if (changes.length) {
+    logActivity('task', req.params.id, req.user.id, 'updated', changes.join(' · '));
+  }
+
   const updated = db.prepare(`
     SELECT t.*, u.name as assigned_name, u.avatar as assigned_avatar
     FROM tasks t
@@ -207,6 +226,7 @@ router.put('/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id);
   if (!task) return res.status(404).json({ error: 'Tarea no encontrada' });
+  logActivity('task', req.params.id, req.user.id, 'deleted', `Tarea eliminada: "${task.title}"`);
   db.prepare('DELETE FROM tasks WHERE id = ?').run(req.params.id);
   updateProjectProgress(task.project_id);
   res.json({ success: true });
@@ -272,6 +292,18 @@ router.post('/:id/dependencies', (req, res) => {
 router.delete('/:id/dependencies/:depId', (req, res) => {
   db.prepare('DELETE FROM task_dependencies WHERE task_id = ? AND depends_on_id = ?').run(req.params.id, req.params.depId);
   res.json({ success: true });
+});
+
+router.get('/:id/activity', (req, res) => {
+  const logs = db.prepare(`
+    SELECT al.*, u.name as user_name
+    FROM activity_log al
+    LEFT JOIN users u ON u.id = al.user_id
+    WHERE al.entity_type = 'task' AND al.entity_id = ?
+    ORDER BY al.created_at DESC
+    LIMIT 50
+  `).all(req.params.id);
+  res.json(logs);
 });
 
 function updateProjectProgress(projectId) {

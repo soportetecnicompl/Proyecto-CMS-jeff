@@ -1330,3 +1330,11 @@ select.form-control { cursor: pointer; }
 
 .dark-toggle { background:none; border:none; color:var(--gray-400); cursor:pointer; font-size:18px; padding:4px; border-radius:6px; transition:color .15s; }
 .dark-toggle:hover { color:white; }
+
+/* ── Historial de actividad ──────────────────────────────────── */
+.activity-log-item { display:flex; gap:10px; padding:8px 0; border-bottom:1px solid var(--gray-100); font-size:13px; }
+.activity-log-item:last-child { border-bottom:none; }
+.activity-log-dot { width:8px; height:8px; border-radius:50%; background:var(--primary); flex-shrink:0; margin-top:5px; }
+.activity-log-body { flex:1; min-width:0; }
+.activity-log-desc { color:var(--gray-700); line-height:1.4; }
+.activity-log-meta { font-size:11px; color:var(--gray-400); margin-top:2px; }
