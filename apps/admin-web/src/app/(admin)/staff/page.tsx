@@ -304,6 +304,15 @@ export default function StaffPage() {
             </div>
           )}
 
+          <a
+            href={`/mi-tarjeta/${client.id}`}
+            target="_blank"
+            rel="noreferrer"
+            style={{ fontSize: 13, textAlign: 'center', color: 'var(--blue-100)', fontWeight: 600 }}
+          >
+            Ver tarjeta digital del cliente ↗
+          </a>
+
           <button className="btn-secondary" onClick={reset}>
             Buscar otro cliente
           </button>

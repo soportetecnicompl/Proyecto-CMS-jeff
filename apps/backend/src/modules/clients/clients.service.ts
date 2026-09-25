@@ -21,6 +21,15 @@ export class ClientsService {
     return this.prisma.client.findUnique({ where: { whatsapp, isDeleted: false } });
   }
 
+  /** Consulta pública de la tarjeta digital (usada por la pantalla del cliente). */
+  async findById(id: string) {
+    const client = await this.prisma.client.findUnique({ where: { id, isDeleted: false } });
+    if (!client) {
+      throw new NotFoundException('Cliente no encontrado');
+    }
+    return client;
+  }
+
   /** RF-02/RF-03: primer contacto NFC → captura de datos + emisión de wallet passes. */
   async enroll(dto: EnrollClientDto) {
     const existing = await this.findByWhatsapp(dto.whatsapp);

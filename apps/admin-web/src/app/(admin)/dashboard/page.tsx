@@ -4,17 +4,30 @@ import { useEffect, useState } from 'react';
 import { authFetch } from '@/lib/api';
 import { getToken } from '@/lib/auth';
 
+interface TopComplex {
+  complexId: string;
+  name: string;
+  visits: number;
+}
+
 interface DashboardSummary {
   activeClients: number;
   totalVisits: number;
   totalRedemptions: number;
   reviewsRequested: number;
+  newClientsThisMonth: number;
+  retentionRate: number;
+  avgVisitsPerClient: number;
+  topComplexes: TopComplex[];
 }
 
-const TILES: { key: keyof DashboardSummary; label: string }[] = [
+const TILES: { key: keyof DashboardSummary; label: string; format?: (v: number) => string }[] = [
   { key: 'activeClients', label: 'Clientes activos' },
   { key: 'totalVisits', label: 'Visitas registradas' },
   { key: 'totalRedemptions', label: 'Premios canjeados' },
+  { key: 'newClientsThisMonth', label: 'Clientes nuevos (mes)' },
+  { key: 'retentionRate', label: 'Tasa de retorno', format: (v) => `${v}%` },
+  { key: 'avgVisitsPerClient', label: 'Visitas promedio / cliente' },
   { key: 'reviewsRequested', label: 'Reseñas solicitadas' },
 ];
 
@@ -65,14 +78,45 @@ export default function DashboardPage() {
       {error && <p className="error-text">{error}</p>}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-        {TILES.map((tile) => (
-          <div key={tile.key} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <span className="kicker" style={{ color: 'var(--black-60)' }}>
-              {tile.label}
-            </span>
-            <span style={{ fontSize: 32, fontWeight: 600 }}>{summary?.[tile.key] ?? '—'}</span>
-          </div>
-        ))}
+        {TILES.map((tile) => {
+          const raw = summary?.[tile.key];
+          const value = typeof raw === 'number' ? (tile.format ? tile.format(raw) : raw) : '—';
+          return (
+            <div key={tile.key} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <span className="kicker" style={{ color: 'var(--black-60)' }}>
+                {tile.label}
+              </span>
+              <span style={{ fontSize: 32, fontWeight: 600 }}>{value}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <span style={{ fontSize: 16, fontWeight: 600 }}>Top complejos por visitas</span>
+        <table>
+          <thead>
+            <tr>
+              <th>Complejo</th>
+              <th>Visitas</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(summary?.topComplexes ?? []).map((complex) => (
+              <tr key={complex.complexId}>
+                <td>{complex.name}</td>
+                <td>{complex.visits}</td>
+              </tr>
+            ))}
+            {summary && summary.topComplexes.length === 0 && (
+              <tr>
+                <td colSpan={2} style={{ color: 'var(--black-60)' }}>
+                  Aún no hay visitas registradas.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
