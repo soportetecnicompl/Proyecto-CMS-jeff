@@ -6,9 +6,11 @@ import { clearSession, getUser } from '@/lib/auth';
 
 const LINKS = [
   { href: '/dashboard', label: 'Dashboard' },
+  { href: '/staff', label: 'Staff' },
   { href: '/complexes', label: 'Complejos' },
   { href: '/loyalty', label: 'Lealtad' },
   { href: '/templates', label: 'Plantillas WhatsApp' },
+  { href: '/users', label: 'Usuarios y roles' },
 ];
 
 export function Nav() {
