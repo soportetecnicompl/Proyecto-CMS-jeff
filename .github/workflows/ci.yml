@@ -23,6 +23,9 @@ jobs:
         run: npx prisma generate
         working-directory: apps/backend
 
+      - name: Unit tests
+        run: npm run test --workspace=apps/backend
+
       - name: Build
         run: npm run build --workspace=apps/backend
 
