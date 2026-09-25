@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedemptionStatus } from '@prisma/client';
+import { CreateLoyaltyRuleDto } from './dto/create-loyalty-rule.dto';
+import { CreateRewardDto } from './dto/create-reward.dto';
 
 /** Aplica reglas de lealtad y gestiona premios configurables (RF-06 a RF-10). */
 @Injectable()
@@ -33,6 +35,19 @@ export class LoyaltyService {
 
   listRules() {
     return this.prisma.loyaltyRule.findMany({ orderBy: { createdAt: 'desc' } });
+  }
+
+  /** RF-18: crea una nueva regla de lealtad y desactiva la anterior. */
+  async createRule(dto: CreateLoyaltyRuleDto) {
+    return this.prisma.$transaction([
+      this.prisma.loyaltyRule.updateMany({ where: { isActive: true }, data: { isActive: false } }),
+      this.prisma.loyaltyRule.create({ data: { ...dto, isActive: true } }),
+    ]).then(([, rule]) => rule);
+  }
+
+  /** RF-18: crea un premio canjeable. */
+  createReward(dto: CreateRewardDto) {
+    return this.prisma.reward.create({ data: dto });
   }
 
   /** RF-10: canje de un premio; valida que el cliente tenga sellos/puntos suficientes. */

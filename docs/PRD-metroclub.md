@@ -129,3 +129,12 @@ Incluye todo lo necesario para lanzar en 1-2 complejos piloto y luego expandir.
 - Se contará con números de WhatsApp Business verificados.
 - El personal de taquilla/confitería colaborará en las pruebas piloto.
 - Se definirán las reglas exactas de sellos y premios junto al equipo de Metrocinemas en la fase de discovery.
+
+## 10. Addendum de Arquitectura — Automatización de WhatsApp
+
+Decisión de arquitectura (post v1.0): la automatización de WhatsApp (RF-11 a RF-15) se
+implementa con **n8n** (orquestación de flujos) + **Chatwoot** (bandeja e integración con
+WhatsApp Business API), en lugar de una integración directa del backend con la Meta Cloud
+API / BSP. El backend sigue siendo la fuente de verdad de plantillas y mensajes
+(`WhatsAppTemplate`, `WhatsAppMessage`) y expone/recibe eventos (webhooks) que n8n consume
+para disparar los flujos en Chatwoot; Chatwoot gestiona el envío real y las conversaciones.
