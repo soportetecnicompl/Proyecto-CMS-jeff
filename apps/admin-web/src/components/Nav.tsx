@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { clearSession, getUser } from '@/lib/auth';
 
 const LINKS = [
@@ -13,6 +13,7 @@ const LINKS = [
 
 export function Nav() {
   const router = useRouter();
+  const pathname = usePathname();
   const user = getUser();
 
   const handleLogout = () => {
@@ -21,16 +22,18 @@ export function Nav() {
   };
 
   return (
-    <nav style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '1rem 2rem', borderBottom: '1px solid #ddd' }}>
-      <strong>MetroClub Admin</strong>
+    <nav className="navbar">
+      <strong style={{ fontSize: 16 }}>MetroClub Admin</strong>
       {LINKS.map((link) => (
-        <Link key={link.href} href={link.href}>
+        <Link key={link.href} href={link.href} className={`navlink${pathname === link.href ? ' active' : ''}`}>
           {link.label}
         </Link>
       ))}
       <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        {user && <span>{user.name}</span>}
-        <button onClick={handleLogout}>Cerrar sesión</button>
+        {user && <span style={{ fontSize: 14, color: 'var(--black-60)' }}>{user.name}</span>}
+        <button onClick={handleLogout} className="btn-secondary" style={{ padding: '8px 16px' }}>
+          Cerrar sesión
+        </button>
       </span>
     </nav>
   );

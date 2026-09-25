@@ -44,20 +44,48 @@ export default function DashboardPage() {
   };
 
   return (
-    <div>
-      <h1>Dashboard</h1>
-      {error && <p style={{ color: 'crimson' }}>{error}</p>}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1>Dashboard</h1>
+        <span
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: 'var(--black-60)',
+            background: 'var(--black-0)',
+            boxShadow: 'var(--shadow-4)',
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-full)',
+          }}
+        >
+          Todos los complejos ▾
+        </span>
+      </div>
+
+      {error && <p className="error-text">{error}</p>}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
         {TILES.map((tile) => (
-          <div key={tile.key} style={{ border: '1px solid #ddd', borderRadius: 8, padding: '1rem' }}>
-            <div style={{ fontSize: '0.85rem', color: '#666' }}>{tile.label}</div>
-            <div style={{ fontSize: '2rem', fontWeight: 600 }}>{summary?.[tile.key] ?? '—'}</div>
+          <div key={tile.key} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span className="kicker" style={{ color: 'var(--black-60)' }}>
+              {tile.label}
+            </span>
+            <span style={{ fontSize: 32, fontWeight: 600 }}>{summary?.[tile.key] ?? '—'}</span>
           </div>
         ))}
       </div>
-      <p style={{ marginTop: '2rem' }}>
-        <button onClick={handleExport}>Exportar base de clientes (CSV)</button>
-      </p>
+
+      <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span style={{ fontSize: 16, fontWeight: 600 }}>Base de clientes</span>
+          <span style={{ fontSize: 13, color: 'var(--black-60)' }}>
+            Exporta el listado completo para reportes mensuales (RF-19)
+          </span>
+        </div>
+        <button onClick={handleExport} className="btn-primary">
+          Exportar CSV
+        </button>
+      </div>
     </div>
   );
 }

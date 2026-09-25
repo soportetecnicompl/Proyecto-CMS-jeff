@@ -36,43 +36,62 @@ export default function LoginPage() {
   };
 
   return (
-    <main
-      style={{
-        display: 'flex',
-        minHeight: '100vh',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'sans-serif',
-      }}
-    >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: 320 }}>
-        <h1>MetroClub Admin</h1>
-        <label>
-          Correo
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            style={{ width: '100%' }}
-          />
-        </label>
-        <label>
-          Contraseña
-          <input
-            type="password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            style={{ width: '100%' }}
-          />
-        </label>
-        {error && <p style={{ color: 'crimson' }}>{error}</p>}
-        <button type="submit" disabled={loading}>
-          {loading ? 'Ingresando…' : 'Ingresar'}
-        </button>
-      </form>
+    <main style={{ display: 'flex', minHeight: '100vh' }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, width: 340 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
+            <span className="kicker">Metrocinemas</span>
+            <h1>MetroClub Admin</h1>
+            <span style={{ fontSize: 14, color: 'var(--black-60)' }}>
+              Panel de administración del programa de fidelización (RF-16)
+            </span>
+          </div>
+          <label>
+            Correo
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </label>
+          <label>
+            Contraseña
+            <input
+              type="password"
+              required
+              minLength={8}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          </label>
+          {error && <p className="error-text">{error}</p>}
+          <button type="submit" disabled={loading} className="btn-primary">
+            {loading ? 'Ingresando…' : 'Ingresar'}
+          </button>
+        </form>
+      </div>
+
+      <div
+        style={{
+          flex: 1,
+          background: 'linear-gradient(to right, #0a1631, #fba701)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 60,
+        }}
+      >
+        <div style={{ maxWidth: 380, color: '#fff', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <h2 style={{ fontSize: 28, fontWeight: 400, color: '#fff' }}>
+            Un solo panel para todos los complejos
+          </h2>
+          <span style={{ fontSize: 16, opacity: 0.9, lineHeight: 1.5 }}>
+            Gestiona reglas de lealtad, complejos, plantillas de WhatsApp y métricas de retención desde un mismo
+            lugar (NFR-05).
+          </span>
+        </div>
+      </div>
     </main>
   );
 }

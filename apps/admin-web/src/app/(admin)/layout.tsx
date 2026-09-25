@@ -6,7 +6,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <AuthGuard>
       <Nav />
-      <main style={{ padding: '2rem', fontFamily: 'sans-serif' }}>{children}</main>
+      <main style={{ padding: '32px' }}>{children}</main>
     </AuthGuard>
   );
 }

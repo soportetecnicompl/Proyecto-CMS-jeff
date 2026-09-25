@@ -70,13 +70,13 @@ export default function LoyaltyPage() {
   };
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <h1>Lealtad</h1>
-      {error && <p style={{ color: 'crimson' }}>{error}</p>}
+      {error && <p className="error-text">{error}</p>}
 
-      <section style={{ marginBottom: '2.5rem' }}>
+      <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <h2>Reglas (RF-06/RF-07)</h2>
-        <form onSubmit={handleCreateRule} style={{ display: 'flex', gap: '0.5rem', margin: '1rem 0', flexWrap: 'wrap' }}>
+        <form onSubmit={handleCreateRule} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <input
             placeholder="Nombre"
             required
@@ -109,11 +109,13 @@ export default function LoyaltyPage() {
             value={ruleForm.currencyUnit}
             onChange={(e) => setRuleForm({ ...ruleForm, currencyUnit: Number(e.target.value) })}
           />
-          <button type="submit">Crear regla activa</button>
+          <button type="submit" className="btn-primary">
+            Crear regla activa
+          </button>
         </form>
-        <table cellPadding={8} style={{ borderCollapse: 'collapse', width: '100%' }}>
+        <table>
           <thead>
-            <tr style={{ textAlign: 'left', borderBottom: '1px solid #ddd' }}>
+            <tr>
               <th>Nombre</th>
               <th>Sellos/visita</th>
               <th>Puntos por L.</th>
@@ -122,22 +124,33 @@ export default function LoyaltyPage() {
           </thead>
           <tbody>
             {rules.map((rule) => (
-              <tr key={rule.id} style={{ borderBottom: '1px solid #eee' }}>
+              <tr key={rule.id}>
                 <td>{rule.name}</td>
                 <td>{rule.stampsPerVisit}</td>
                 <td>
                   {rule.pointsPerCurrency} por L.{rule.currencyUnit}
                 </td>
-                <td>{rule.isActive ? 'Activa' : 'Inactiva'}</td>
+                <td>
+                  <span
+                    className="badge"
+                    style={
+                      rule.isActive
+                        ? undefined
+                        : { background: 'var(--black-10)', color: 'var(--black-40)' }
+                    }
+                  >
+                    {rule.isActive ? 'Activa' : 'Inactiva'}
+                  </span>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </section>
 
-      <section>
+      <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <h2>Premios (RF-08)</h2>
-        <form onSubmit={handleCreateReward} style={{ display: 'flex', gap: '0.5rem', margin: '1rem 0', flexWrap: 'wrap' }}>
+        <form onSubmit={handleCreateReward} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <input
             placeholder="Nombre"
             required
@@ -163,11 +176,13 @@ export default function LoyaltyPage() {
             value={rewardForm.pointsCost}
             onChange={(e) => setRewardForm({ ...rewardForm, pointsCost: e.target.value })}
           />
-          <button type="submit">Crear premio</button>
+          <button type="submit" className="btn-primary">
+            Crear premio
+          </button>
         </form>
-        <table cellPadding={8} style={{ borderCollapse: 'collapse', width: '100%' }}>
+        <table>
           <thead>
-            <tr style={{ textAlign: 'left', borderBottom: '1px solid #ddd' }}>
+            <tr>
               <th>Nombre</th>
               <th>Costo sellos</th>
               <th>Costo puntos</th>
@@ -175,7 +190,7 @@ export default function LoyaltyPage() {
           </thead>
           <tbody>
             {rewards.map((reward) => (
-              <tr key={reward.id} style={{ borderBottom: '1px solid #eee' }}>
+              <tr key={reward.id}>
                 <td>{reward.name}</td>
                 <td>{reward.stampsCost ?? '—'}</td>
                 <td>{reward.pointsCost ?? '—'}</td>
