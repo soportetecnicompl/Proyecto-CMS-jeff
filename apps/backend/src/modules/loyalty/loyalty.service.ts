@@ -33,6 +33,26 @@ export class LoyaltyService {
     return this.prisma.reward.findMany({ where: { isActive: true } });
   }
 
+  /** Progreso de sellos hacia el próximo premio (usado en la tarjeta pública y en Wallet). */
+  async getStampProgress(stamps: number) {
+    const rewards = await this.listRewards();
+    const stampRewards = rewards
+      .filter((reward) => reward.stampsCost != null)
+      .sort((a, b) => (a.stampsCost ?? 0) - (b.stampsCost ?? 0));
+
+    const nextReward = stampRewards.find((reward) => (reward.stampsCost ?? 0) > stamps) ?? null;
+
+    return {
+      rewards: stampRewards.map((reward) => ({
+        id: reward.id,
+        name: reward.name,
+        stampsCost: reward.stampsCost,
+        achieved: stamps >= (reward.stampsCost ?? 0),
+      })),
+      nextReward: nextReward ? { name: nextReward.name, stampsCost: nextReward.stampsCost } : null,
+    };
+  }
+
   listRules() {
     return this.prisma.loyaltyRule.findMany({ orderBy: { createdAt: 'desc' } });
   }

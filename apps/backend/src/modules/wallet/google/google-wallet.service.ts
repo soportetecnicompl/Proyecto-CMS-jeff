@@ -4,6 +4,10 @@ import { GoogleAuth } from 'google-auth-library';
 import * as jwt from 'jsonwebtoken';
 import * as fs from 'node:fs';
 import { Client } from '@prisma/client';
+import { LoyaltyService } from '../../loyalty/loyalty.service';
+
+const FILLED_STAMP = '●';
+const EMPTY_STAMP = '○';
 
 const WALLET_API_BASE = 'https://walletobjects.googleapis.com/walletobjects/v1';
 const SCOPES = ['https://www.googleapis.com/auth/wallet_object.issuer'];
@@ -24,7 +28,10 @@ export class GoogleWalletService {
   private readonly logger = new Logger(GoogleWalletService.name);
   private auth: GoogleAuth | null = null;
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly loyaltyService: LoyaltyService,
+  ) {}
 
   isConfigured(): boolean {
     return Boolean(
@@ -89,6 +96,21 @@ export class GoogleWalletService {
     }).catch((error) => this.logger.warn(`No se pudo crear la loyaltyClass: ${(error as Error).message}`));
   }
 
+  /** Barra visual de sellos pendientes ("●●●○○  3/5 → Entrada 2D gratis"). */
+  private async buildStampProgressText(stamps: number): Promise<string> {
+    const { nextReward } = await this.loyaltyService.getStampProgress(stamps);
+
+    if (!nextReward || !nextReward.stampsCost) {
+      return `${FILLED_STAMP.repeat(Math.max(stamps, 1))}  ¡Tienes premios listos para canjear! 🎉`;
+    }
+
+    const total = nextReward.stampsCost;
+    const filled = Math.min(stamps, total);
+    const dots = FILLED_STAMP.repeat(filled) + EMPTY_STAMP.repeat(Math.max(total - filled, 0));
+
+    return `${dots}  ${stamps}/${total} → ${nextReward.name}`;
+  }
+
   /** Crea/actualiza el loyaltyObject del cliente. Un PATCH aquí refleja el cambio en el pass ya guardado (RF-05). */
   async upsertLoyaltyObject(client: Pick<Client, 'id' | 'name' | 'stamps' | 'points'>): Promise<string | null> {
     if (!this.isConfigured()) {
@@ -99,6 +121,7 @@ export class GoogleWalletService {
     await this.ensureLoyaltyClass();
 
     const objectId = this.objectId(client.id);
+    const progressText = await this.buildStampProgressText(client.stamps);
     const payload = {
       id: objectId,
       classId: this.classId(),
@@ -108,6 +131,13 @@ export class GoogleWalletService {
       loyaltyPoints: { label: 'Sellos', balance: { int: client.stamps } },
       secondaryLoyaltyPoints: { label: 'Puntos', balance: { int: client.points } },
       barcode: { type: 'QR_CODE', value: client.id },
+      textModulesData: [
+        {
+          id: 'stamp_progress',
+          header: 'Progreso hacia tu próximo premio',
+          body: progressText,
+        },
+      ],
     };
 
     try {

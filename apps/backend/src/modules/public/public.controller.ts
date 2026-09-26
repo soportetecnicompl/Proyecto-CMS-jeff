@@ -26,16 +26,10 @@ export class PublicController {
   @Get(':id/card')
   async getCard(@Param('id') id: string) {
     const client = await this.clientsService.findById(id);
-    const rewards = await this.loyaltyService.listRewards();
+    const progress = await this.loyaltyService.getStampProgress(client.stamps);
     const googlePass = await this.prisma.walletPass.findFirst({
       where: { clientId: id, platform: WalletPlatform.GOOGLE },
     });
-
-    const stampRewards = rewards
-      .filter((reward) => reward.stampsCost != null)
-      .sort((a, b) => (a.stampsCost ?? 0) - (b.stampsCost ?? 0));
-
-    const nextReward = stampRewards.find((reward) => (reward.stampsCost ?? 0) > client.stamps) ?? null;
 
     return {
       name: client.name,
@@ -43,13 +37,8 @@ export class PublicController {
       stamps: client.stamps,
       points: client.points,
       lastVisitAt: client.lastVisitAt,
-      rewards: stampRewards.map((reward) => ({
-        id: reward.id,
-        name: reward.name,
-        stampsCost: reward.stampsCost,
-        achieved: client.stamps >= (reward.stampsCost ?? 0),
-      })),
-      nextReward: nextReward ? { name: nextReward.name, stampsCost: nextReward.stampsCost } : null,
+      rewards: progress.rewards,
+      nextReward: progress.nextReward,
       googleWalletSaveUrl: googlePass?.passUrl ?? null,
     };
   }
