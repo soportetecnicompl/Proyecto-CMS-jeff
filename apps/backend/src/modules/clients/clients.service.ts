@@ -5,6 +5,7 @@ import { WalletService } from '../wallet/wallet.service';
 import { WhatsappService } from '../whatsapp/whatsapp.service';
 import { EnrollClientDto } from './dto/enroll-client.dto';
 import { RegisterVisitDto } from './dto/register-visit.dto';
+import { UpdateClientDto } from './dto/update-client.dto';
 
 /** Enrolamiento y sellado (RF-01 a RF-05, RF-20) y baja de clientes (NFR-07). */
 @Injectable()
@@ -81,6 +82,26 @@ export class ClientsService {
 
     await this.walletService.pushUpdate(clientId);
     await this.whatsappService.schedulePostVisitMessage(clientId);
+
+    return updatedClient;
+  }
+
+  /** Edita datos del cliente (p. ej. nombre) y refresca el wallet pass ya emitido. */
+  async update(clientId: string, dto: UpdateClientDto) {
+    const client = await this.prisma.client.findUnique({ where: { id: clientId } });
+    if (!client || client.isDeleted) {
+      throw new NotFoundException('Cliente no encontrado');
+    }
+
+    const updatedClient = await this.prisma.client.update({
+      where: { id: clientId },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.birthDate !== undefined ? { birthDate: new Date(dto.birthDate) } : {}),
+      },
+    });
+
+    await this.walletService.pushUpdate(clientId);
 
     return updatedClient;
   }

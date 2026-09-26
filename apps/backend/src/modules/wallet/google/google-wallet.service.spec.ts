@@ -44,26 +44,39 @@ describe('GoogleWalletService', () => {
     expect(service.buildSaveLink('object-1')).toBeNull();
   });
 
-  describe('buildStampProgressText (barra de sellos pendientes)', () => {
-    it('muestra sellos llenos/vacíos hacia el próximo premio', async () => {
+  describe('buildStampProgress (sellos pendientes)', () => {
+    type ProgressFn = (s: number) => Promise<{ shortLabel: string; detailText: string }>;
+
+    it('muestra sellos llenos/vacíos y "N/total" hacia el próximo premio', async () => {
       loyaltyService.getStampProgress.mockResolvedValue({
         rewards: [],
         nextReward: { name: 'Entrada 2D gratis', stampsCost: 5 },
       });
       const service = new GoogleWalletService(buildConfig({}) as never, loyaltyService as never);
 
-      const text = await (service as unknown as { buildStampProgressText: (s: number) => Promise<string> }).buildStampProgressText(3);
+      const progress = await (service as unknown as { buildStampProgress: ProgressFn }).buildStampProgress(3);
 
-      expect(text).toBe('●●●○○  3/5 → Entrada 2D gratis');
+      expect(progress.shortLabel).toBe('3/5');
+      expect(progress.detailText).toBe('●●●○○  3/5 → Entrada 2D gratis');
     });
 
     it('felicita al cliente cuando ya no hay un próximo premio (todos desbloqueados)', async () => {
       loyaltyService.getStampProgress.mockResolvedValue({ rewards: [], nextReward: null });
       const service = new GoogleWalletService(buildConfig({}) as never, loyaltyService as never);
 
-      const text = await (service as unknown as { buildStampProgressText: (s: number) => Promise<string> }).buildStampProgressText(12);
+      const progress = await (service as unknown as { buildStampProgress: ProgressFn }).buildStampProgress(12);
 
-      expect(text).toContain('premios listos para canjear');
+      expect(progress.detailText).toContain('premios listos para canjear');
+    });
+  });
+
+  describe('memberCode', () => {
+    it('genera un código corto y legible a partir del id del cliente', () => {
+      const service = new GoogleWalletService(buildConfig({}) as never, loyaltyService as never);
+
+      const code = (service as unknown as { memberCode: (id: string) => string }).memberCode('cmuhojotn0000iekdhgaqbjal');
+
+      expect(code).toBe('MC-AQBJAL');
     });
   });
 });

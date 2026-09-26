@@ -96,19 +96,28 @@ export class GoogleWalletService {
     }).catch((error) => this.logger.warn(`No se pudo crear la loyaltyClass: ${(error as Error).message}`));
   }
 
-  /** Barra visual de sellos pendientes ("●●●○○  3/5 → Entrada 2D gratis"). */
-  private async buildStampProgressText(stamps: number): Promise<string> {
+  /** Progreso de sellos hacia el próximo premio, para la vista principal y el detalle. */
+  private async buildStampProgress(stamps: number): Promise<{ shortLabel: string; detailText: string }> {
     const { nextReward } = await this.loyaltyService.getStampProgress(stamps);
 
     if (!nextReward || !nextReward.stampsCost) {
-      return `${FILLED_STAMP.repeat(Math.max(stamps, 1))}  ¡Tienes premios listos para canjear! 🎉`;
+      const dots = FILLED_STAMP.repeat(Math.max(stamps, 1));
+      return { shortLabel: `${stamps}`, detailText: `${dots}  ¡Tienes premios listos para canjear! 🎉` };
     }
 
     const total = nextReward.stampsCost;
     const filled = Math.min(stamps, total);
     const dots = FILLED_STAMP.repeat(filled) + EMPTY_STAMP.repeat(Math.max(total - filled, 0));
 
-    return `${dots}  ${stamps}/${total} → ${nextReward.name}`;
+    return {
+      shortLabel: `${stamps}/${total}`,
+      detailText: `${dots}  ${stamps}/${total} → ${nextReward.name}`,
+    };
+  }
+
+  /** Código corto y amigable para mostrar debajo del QR (en vez del id completo del cliente). */
+  private memberCode(clientId: string): string {
+    return `MC-${clientId.slice(-6).toUpperCase()}`;
   }
 
   /** Crea/actualiza el loyaltyObject del cliente. Un PATCH aquí refleja el cambio en el pass ya guardado (RF-05). */
@@ -121,21 +130,21 @@ export class GoogleWalletService {
     await this.ensureLoyaltyClass();
 
     const objectId = this.objectId(client.id);
-    const progressText = await this.buildStampProgressText(client.stamps);
+    const progress = await this.buildStampProgress(client.stamps);
     const payload = {
       id: objectId,
       classId: this.classId(),
       state: 'ACTIVE',
       accountId: client.id,
       accountName: client.name,
-      loyaltyPoints: { label: 'Sellos', balance: { int: client.stamps } },
+      loyaltyPoints: { label: 'Sellos', balance: { string: progress.shortLabel } },
       secondaryLoyaltyPoints: { label: 'Puntos', balance: { int: client.points } },
-      barcode: { type: 'QR_CODE', value: client.id },
+      barcode: { type: 'QR_CODE', value: client.id, alternateText: this.memberCode(client.id) },
       textModulesData: [
         {
           id: 'stamp_progress',
           header: 'Progreso hacia tu próximo premio',
-          body: progressText,
+          body: progress.detailText,
         },
       ],
     };
