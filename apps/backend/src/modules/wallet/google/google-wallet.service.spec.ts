@@ -45,7 +45,9 @@ describe('GoogleWalletService', () => {
   });
 
   describe('buildStampProgress (sellos pendientes)', () => {
-    type ProgressFn = (s: number) => Promise<{ shortLabel: string; detailText: string }>;
+    type ProgressFn = (
+      s: number,
+    ) => Promise<{ shortLabel: string; detailText: string; total: number | null; rewardName: string | null }>;
 
     it('muestra sellos llenos/vacíos y "N/total" hacia el próximo premio', async () => {
       loyaltyService.getStampProgress.mockResolvedValue({

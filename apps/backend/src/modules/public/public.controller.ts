@@ -3,6 +3,7 @@ import type { Response } from 'express';
 import { ClientsService } from '../clients/clients.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { WalletService } from '../wallet/wallet.service';
+import { HeroImageService } from '../wallet/google/hero-image.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { WalletPlatform } from '@prisma/client';
 
@@ -20,6 +21,7 @@ export class PublicController {
     private readonly clientsService: ClientsService,
     private readonly loyaltyService: LoyaltyService,
     private readonly walletService: WalletService,
+    private readonly heroImageService: HeroImageService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -41,6 +43,28 @@ export class PublicController {
       nextReward: progress.nextReward,
       googleWalletSaveUrl: googlePass?.passUrl ?? null,
     };
+  }
+
+  /**
+   * Imagen dinámica (heroImage) con la barra de progreso de sellos que se ve en la
+   * vista principal del pase de Google Wallet — la Wallet API no soporta gráficos
+   * personalizados por texto, así que este PNG generado en el momento es el único
+   * punto de extensión posible (ver HeroImageService).
+   */
+  @Get(':id/wallet-hero.png')
+  async getWalletHero(@Param('id') id: string, @Res() res: Response) {
+    const client = await this.clientsService.findById(id);
+    const progress = await this.loyaltyService.getStampProgress(client.stamps);
+
+    const buffer = this.heroImageService.render({
+      stamps: client.stamps,
+      totalStamps: progress.nextReward?.stampsCost ?? null,
+      rewardName: progress.nextReward?.name ?? null,
+    });
+
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.send(buffer);
   }
 
   /** Descarga el .pkpass real para "Agregar a Apple Wallet" (RF-03). */

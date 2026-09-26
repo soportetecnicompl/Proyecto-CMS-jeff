@@ -108,12 +108,19 @@ export class GoogleWalletService {
    * completo (incluido el nombre y el QR). Por eso el progreso "N/total" va en el `label`
    * y en `textModulesData`, y el balance numérico se deja siempre como `int`.
    */
-  private async buildStampProgress(stamps: number): Promise<{ shortLabel: string; detailText: string }> {
+  private async buildStampProgress(
+    stamps: number,
+  ): Promise<{ shortLabel: string; detailText: string; total: number | null; rewardName: string | null }> {
     const { nextReward } = await this.loyaltyService.getStampProgress(stamps);
 
     if (!nextReward || !nextReward.stampsCost) {
       const dots = FILLED_STAMP.repeat(Math.max(stamps, 1));
-      return { shortLabel: 'Sellos · ¡premios listos! 🎉', detailText: `${dots}  ¡Tienes premios listos para canjear! 🎉` };
+      return {
+        shortLabel: 'Sellos · ¡premios listos! 🎉',
+        detailText: `${dots}  ¡Tienes premios listos para canjear! 🎉`,
+        total: null,
+        rewardName: null,
+      };
     }
 
     const total = nextReward.stampsCost;
@@ -123,7 +130,19 @@ export class GoogleWalletService {
     return {
       shortLabel: `Sellos (${stamps}/${total} → ${nextReward.name})`,
       detailText: `${dots}  ${stamps}/${total} → ${nextReward.name}`,
+      total,
+      rewardName: nextReward.name,
     };
+  }
+
+  /**
+   * URL pública (versionada para evitar el caché de imágenes de Google) del heroImage
+   * que dibuja la barra de progreso de sellos — ver HeroImageService.
+   */
+  private buildHeroImageUrl(client: Pick<Client, 'id' | 'stamps'>, total: number | null): string {
+    const base = this.config.get<string>('PUBLIC_API_BASE_URL', 'http://localhost:3000/api');
+    const version = `${client.stamps}-${total ?? 0}`;
+    return `${base}/public/clients/${client.id}/wallet-hero.png?v=${version}`;
   }
 
   /** Código corto y amigable para mostrar debajo del QR (en vez del id completo del cliente). */
@@ -151,6 +170,12 @@ export class GoogleWalletService {
       loyaltyPoints: { label: progress.shortLabel, balance: { int: client.stamps } },
       secondaryLoyaltyPoints: { label: 'Puntos', balance: { int: client.points } },
       barcode: { type: 'QR_CODE', value: client.id, alternateText: this.memberCode(client.id) },
+      heroImage: {
+        sourceUri: { uri: this.buildHeroImageUrl(client, progress.total) },
+        contentDescription: {
+          defaultValue: { language: 'es', value: `Progreso de sellos: ${client.stamps}` },
+        },
+      },
       textModulesData: [
         {
           id: 'stamp_progress',
