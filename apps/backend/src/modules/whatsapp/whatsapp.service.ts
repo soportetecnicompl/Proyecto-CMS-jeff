@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service';
 import { WhatsAppMessageType } from '@prisma/client';
 
@@ -32,15 +31,20 @@ export class WhatsappService {
     return this.queueMessage(clientId, WhatsAppMessageType.POST_VISIT, 'post_visit_feedback');
   }
 
-  /** RF-13: cron diario que saluda por cumpleaños 7 días antes. */
-  @Cron(CronExpression.EVERY_DAY_AT_9AM)
+  /**
+   * RF-13: saluda por cumpleaños 7 días antes. Se ejecuta vía Vercel Cron
+   * (ver vercel.json) contra InternalCronController — no hay proceso persistente
+   * en serverless para un @Cron en memoria.
+   */
   async sendBirthdayGreetings() {
     // TODO: consultar clientes con birthDate a 7 días y encolar plantilla 'birthday_greeting'.
     this.logger.debug('Job de cumpleaños ejecutado');
   }
 
-  /** RF-12: cron diario que detecta clientes inactivos en los umbrales de win-back. */
-  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  /**
+   * RF-12: detecta clientes inactivos en los umbrales de win-back. Se ejecuta
+   * vía Vercel Cron (ver vercel.json) contra InternalCronController.
+   */
   async sendWinBackCampaigns() {
     for (const days of WIN_BACK_THRESHOLDS_DAYS) {
       // TODO: consultar clientes cuyo lastVisitAt cumple exactamente `days` de inactividad

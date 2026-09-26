@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nest build",
+    "vercel-build": "prisma generate && nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "lint": "eslint \"src/**/*.ts\"",
@@ -40,7 +41,6 @@
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.4.0",
-    "@nestjs/schedule": "^4.1.0",
     "@prisma/client": "^5.20.0",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
