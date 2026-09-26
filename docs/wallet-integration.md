@@ -70,11 +70,26 @@ PUBLIC_API_BASE_URL=https://api.metroclub.hn/api
 
 ### Qué falta obtener
 1. **Cuenta de Google Wallet Console** (business.google.com/wallet) a nombre
-   de Metrocinemas — Google debe aprobar el "Issuer ID" (puede tardar días).
-2. **Service account** en Google Cloud con el rol *Wallet Object Issuer*,
-   vinculado a ese Issuer ID desde Wallet Console, y su JSON de credenciales.
-3. **Logo hosteado en una URL pública HTTPS** (Google no acepta archivos
-   locales) para el `hexBackgroundColor`/logo de la clase de lealtad.
+   de Metrocinemas — se puede empezar en **modo Demo** sin costo ni
+   aprobación (permite crear y probar passes reales antes de pedir acceso
+   de publicación pública).
+2. **Habilitar la Google Wallet API** en el proyecto de Google Cloud
+   asociado (Google Cloud Console → APIs y servicios → Habilitar
+   `walletobjects.googleapis.com`).
+3. **Service account** en ese mismo proyecto de Google Cloud, con su JSON
+   de credenciales descargado.
+4. **Agregar el email del service account como usuario en Wallet Console**
+   (Usuarios → agregar) — sin este paso la API devuelve
+   `403 permissionDenied` aunque las credenciales sean válidas.
+5. **Logo hosteado en una URL pública HTTPS** (`GOOGLE_WALLET_LOGO_URL`) —
+   Google rechaza la creación de la clase de lealtad sin `programLogo`.
+   Reemplazar el placeholder por el logo real de Metrocinemas.
+
+Verificado end-to-end en este proyecto (modo Demo): enrolar un cliente crea
+la `loyaltyClass` y el `loyaltyObject` reales vía API, y devuelve un link
+"Guardar en Google Wallet" (`https://pay.google.com/gp/v/save/...`)
+funcional. Una visita/sellado hace `PATCH` del objeto y el cambio se
+refleja solo, sin push aparte.
 
 ### Variables de entorno
 ```

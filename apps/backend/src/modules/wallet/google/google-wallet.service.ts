@@ -72,10 +72,18 @@ export class GoogleWalletService {
   async ensureLoyaltyClass(): Promise<void> {
     if (!this.isConfigured()) return;
 
+    // Google exige un logo público HTTPS para crear la clase. Placeholder hasta tener
+    // el logo real de Metrocinemas hosteado (ver docs/wallet-integration.md).
+    const logoUrl = this.config.get<string>(
+      'GOOGLE_WALLET_LOGO_URL',
+      'https://placehold.co/660x660/09142e/ffffff.png?text=MetroClub',
+    );
+
     await this.request('POST', 'loyaltyClass', {
       id: this.classId(),
       issuerName: 'Metrocinemas',
       programName: 'MetroClub',
+      programLogo: { sourceUri: { uri: logoUrl }, contentDescription: { defaultValue: { language: 'es', value: 'MetroClub' } } },
       reviewStatus: 'UNDER_REVIEW',
       hexBackgroundColor: '#09142e',
     }).catch((error) => this.logger.warn(`No se pudo crear la loyaltyClass: ${(error as Error).message}`));
