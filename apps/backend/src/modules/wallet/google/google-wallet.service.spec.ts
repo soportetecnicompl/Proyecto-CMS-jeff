@@ -56,7 +56,7 @@ describe('GoogleWalletService', () => {
 
       const progress = await (service as unknown as { buildStampProgress: ProgressFn }).buildStampProgress(3);
 
-      expect(progress.shortLabel).toBe('3/5');
+      expect(progress.shortLabel).toBe('Sellos (3/5 → Entrada 2D gratis)');
       expect(progress.detailText).toBe('●●●○○  3/5 → Entrada 2D gratis');
     });
 

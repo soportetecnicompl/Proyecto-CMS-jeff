@@ -62,7 +62,9 @@ export class GoogleWalletService {
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok && res.status !== 409) {
-      throw new Error(`Google Wallet API ${method} ${path} → ${res.status}: ${await res.text()}`);
+      const error = new Error(`Google Wallet API ${method} ${path} → ${res.status}: ${await res.text()}`);
+      (error as Error & { status?: number }).status = res.status;
+      throw error;
     }
     return res.status === 204 ? null : res.json();
   }
@@ -96,13 +98,22 @@ export class GoogleWalletService {
     }).catch((error) => this.logger.warn(`No se pudo crear la loyaltyClass: ${(error as Error).message}`));
   }
 
-  /** Progreso de sellos hacia el próximo premio, para la vista principal y el detalle. */
+  /**
+   * Progreso de sellos hacia el próximo premio, para la vista principal y el detalle.
+   *
+   * OJO: `loyaltyPoints.balance` es un oneof (int/string/money) en la Wallet API. Una vez
+   * que un objeto se crea con un tipo (aquí `int`), un PATCH que intente cambiarlo a otro
+   * tipo (p. ej. `string`) es rechazado por Google con
+   * "More than one type of loyalty point balances cannot be set" — y falla el payload
+   * completo (incluido el nombre y el QR). Por eso el progreso "N/total" va en el `label`
+   * y en `textModulesData`, y el balance numérico se deja siempre como `int`.
+   */
   private async buildStampProgress(stamps: number): Promise<{ shortLabel: string; detailText: string }> {
     const { nextReward } = await this.loyaltyService.getStampProgress(stamps);
 
     if (!nextReward || !nextReward.stampsCost) {
       const dots = FILLED_STAMP.repeat(Math.max(stamps, 1));
-      return { shortLabel: `${stamps}`, detailText: `${dots}  ¡Tienes premios listos para canjear! 🎉` };
+      return { shortLabel: 'Sellos · ¡premios listos! 🎉', detailText: `${dots}  ¡Tienes premios listos para canjear! 🎉` };
     }
 
     const total = nextReward.stampsCost;
@@ -110,7 +121,7 @@ export class GoogleWalletService {
     const dots = FILLED_STAMP.repeat(filled) + EMPTY_STAMP.repeat(Math.max(total - filled, 0));
 
     return {
-      shortLabel: `${stamps}/${total}`,
+      shortLabel: `Sellos (${stamps}/${total} → ${nextReward.name})`,
       detailText: `${dots}  ${stamps}/${total} → ${nextReward.name}`,
     };
   }
@@ -137,7 +148,7 @@ export class GoogleWalletService {
       state: 'ACTIVE',
       accountId: client.id,
       accountName: client.name,
-      loyaltyPoints: { label: 'Sellos', balance: { string: progress.shortLabel } },
+      loyaltyPoints: { label: progress.shortLabel, balance: { int: client.stamps } },
       secondaryLoyaltyPoints: { label: 'Puntos', balance: { int: client.points } },
       barcode: { type: 'QR_CODE', value: client.id, alternateText: this.memberCode(client.id) },
       textModulesData: [
@@ -151,10 +162,17 @@ export class GoogleWalletService {
 
     try {
       await this.request('PATCH', `loyaltyObject/${objectId}`, payload);
-    } catch {
+    } catch (error) {
+      const status = (error as Error & { status?: number }).status;
+      if (status !== 404) {
+        // Un error que no sea "no existe todavía" es real (payload inválido, etc.) — no lo ocultamos
+        // reintentando con POST, porque Google lo rechazaría igual (409) y se perdería en silencio.
+        this.logger.warn(`No se pudo actualizar el loyaltyObject: ${(error as Error).message}`);
+        return objectId;
+      }
       // El objeto no existía todavía: lo creamos.
-      await this.request('POST', 'loyaltyObject', payload).catch((error) =>
-        this.logger.warn(`No se pudo crear/actualizar el loyaltyObject: ${(error as Error).message}`),
+      await this.request('POST', 'loyaltyObject', payload).catch((createError) =>
+        this.logger.warn(`No se pudo crear el loyaltyObject: ${(createError as Error).message}`),
       );
     }
 
