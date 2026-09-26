@@ -109,14 +109,33 @@ model WalletPass {
   clientId     String
   platform     WalletPlatform
   serialNumber String         @unique
+  /// Token que Apple envía como `Authorization: ApplePass <token>` en cada
+  /// llamada al web service (registro de dispositivo, descarga del pass).
+  authToken    String         @default(cuid())
   passUrl      String?
   lastPushedAt DateTime?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
-  client Client @relation(fields: [clientId], references: [id])
+  client                Client                  @relation(fields: [clientId], references: [id])
+  appleDeviceRegistrations AppleDeviceRegistration[]
 
   @@map("wallet_passes")
+}
+
+/// Dispositivo Apple registrado para recibir push updates de un wallet pass
+/// (Apple Wallet Web Service — POST/DELETE /v1/devices/.../registrations/...).
+model AppleDeviceRegistration {
+  id                      String   @id @default(cuid())
+  walletPassId            String
+  deviceLibraryIdentifier String
+  pushToken               String
+  createdAt               DateTime @default(now())
+
+  walletPass WalletPass @relation(fields: [walletPassId], references: [id], onDelete: Cascade)
+
+  @@unique([walletPassId, deviceLibraryIdentifier])
+  @@map("apple_device_registrations")
 }
 
 /// Visita registrada (sello NFC/QR) en un complejo
